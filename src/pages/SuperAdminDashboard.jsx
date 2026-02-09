@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/Context';
 import { Building, Users, Plus, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Button, Card, Input, Modal } from '../components/ui/Components';
 
 const SuperAdminDashboard = () => {
-  const { organizations, usersList, addOrganization, deleteOrganization, addUser, deleteUser } = useApp();
+  const { user, organizations, usersList, addOrganization, deleteOrganization, addUser, deleteUser } = useApp();
   const [activeTab, setActiveTab] = useState('organizations');
   const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+
+  const isStaff = user?.role === 'staff'; // Read-only check
 
   // New Org State
   const [newOrg, setNewOrg] = useState({ name: '', type: 'Veterinaria' });
@@ -57,20 +59,24 @@ const SuperAdminDashboard = () => {
         <div className="space-y-4">
            <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
               <h2 className="text-lg font-bold text-slate-800">Lista de Organizaciones</h2>
-              <Button onClick={() => setIsOrgModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2 inline-block" />
-                Nueva Organización
-              </Button>
+              {!isStaff && (
+                <Button onClick={() => setIsOrgModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2 inline-block" />
+                  Nueva Organización
+                </Button>
+              )}
            </div>
            
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
              {organizations.map(org => (
                <Card key={org.id} className="relative group">
-                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => deleteOrganization(org.id)} className="text-red-400 hover:text-red-600">
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                 </div>
+                 {!isStaff && (
+                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => deleteOrganization(org.id)} className="text-red-400 hover:text-red-600">
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                   </div>
+                 )}
                  <div className="flex items-center gap-3 mb-4">
                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
                      <Building className="w-6 h-6" />
@@ -95,10 +101,12 @@ const SuperAdminDashboard = () => {
         <div className="space-y-4">
            <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
               <h2 className="text-lg font-bold text-slate-800">Lista de Usuarios Global</h2>
-              <Button onClick={() => setIsUserModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2 inline-block" />
-                Nuevo Usuario
-              </Button>
+              {!isStaff && (
+                <Button onClick={() => setIsUserModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2 inline-block" />
+                  Nuevo Usuario
+                </Button>
+              )}
            </div>
 
            <Card className="overflow-hidden">
@@ -109,7 +117,7 @@ const SuperAdminDashboard = () => {
                    <th className="px-6 py-3 font-medium">Email</th>
                    <th className="px-6 py-3 font-medium">Rol</th>
                    <th className="px-6 py-3 font-medium">Estado</th>
-                   <th className="px-6 py-3 font-medium text-right">Acciones</th>
+                   {!isStaff && <th className="px-6 py-3 font-medium text-right">Acciones</th>}
                  </tr>
                </thead>
                <tbody className="divide-y divide-slate-100">
@@ -127,11 +135,13 @@ const SuperAdminDashboard = () => {
                           <CheckCircle className="w-3 h-3" /> Active
                         </span>
                      </td>
-                     <td className="px-6 py-4 text-right">
-                       <button onClick={() => deleteUser(user.id)} className="text-slate-400 hover:text-red-500 transition-colors">
-                         <Trash2 className="w-4 h-4" />
-                       </button>
-                     </td>
+                     {!isStaff && (
+                       <td className="px-6 py-4 text-right">
+                         <button onClick={() => deleteUser(user.id)} className="text-slate-400 hover:text-red-500 transition-colors">
+                           <Trash2 className="w-4 h-4" />
+                         </button>
+                       </td>
+                     )}
                    </tr>
                  ))}
                </tbody>

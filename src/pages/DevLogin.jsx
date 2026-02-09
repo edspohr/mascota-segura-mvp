@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/Context';
 import { User, Stethoscope, ShieldCheck } from 'lucide-react';
 import { Card } from '../components/ui/Components';
 
@@ -51,6 +51,20 @@ const DevLogin = () => {
             description="Monitorea métricas y alertas globales."
             icon={<ShieldCheck className="w-12 h-12 text-slate-800" />}
             onClick={() => handleLogin('admin')}
+            loading={loading}
+          />
+          <RoleCard
+            title="Soy Admin Veterinaria"
+            description="Gestión de negocio y staff."
+            icon={<Activity className="w-12 h-12 text-teal-700" />}
+            onClick={() => handleLogin('partner_admin')}
+            loading={loading}
+          />
+          <RoleCard
+            title="Soy Staff Interno"
+            description="Soporte y visualización global."
+            icon={<Users className="w-12 h-12 text-indigo-500" />}
+            onClick={() => handleLogin('staff')}
             loading={loading}
           />
           <RoleCard

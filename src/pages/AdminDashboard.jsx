@@ -1,5 +1,5 @@
 import React from 'react';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/Context';
 import { ShieldAlert, BarChart, Users, QrCode } from 'lucide-react';
 import { Card } from '../components/ui/Components';
 

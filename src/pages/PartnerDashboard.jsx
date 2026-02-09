@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/Context';
 import { Search, Plus, FileText, Syringe } from 'lucide-react';
 import { Button, Input, Card } from '../components/ui/Components';
 
