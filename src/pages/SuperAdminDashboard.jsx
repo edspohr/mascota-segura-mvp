@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/Context';
-import { Building, Users, Plus, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useApp } from '../context';
+import { Building, Users, Plus, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { Button, Card, Input, Modal } from '../components/ui/Components';
 
 const SuperAdminDashboard = () => {

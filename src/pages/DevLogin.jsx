@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/Context';
+import { useApp } from '../context';
 import { User, Stethoscope, ShieldCheck } from 'lucide-react';
 import { Card } from '../components/ui/Components';
 

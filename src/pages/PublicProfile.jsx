@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useApp } from '../context/Context';
+import { useApp } from '../context';
 import { AlertTriangle, Phone, MessageCircle, ShieldCheck, MapPin, Heart } from 'lucide-react';
 import { Button, Card, Input, Modal } from '../components/ui/Components';
 
@@ -73,13 +73,13 @@ const PublicProfile = () => {
                     <p className="text-slate-600 mb-4 text-sm">Por favor, contacta a mi familia inmediatamente.</p>
                     
                     <div className="space-y-3">
-                        <a href={`tel:${pet.ownerContact.phone}`} className="block w-full">
+                        <a href={`tel:${pet.ownerContact?.phone}`} className="block w-full">
                             <Button className="w-full bg-red-600 hover:bg-red-700 text-white py-4 h-auto text-lg">
                                 <Phone className="w-6 h-6 mr-2" />
-                                Llamar a {pet.ownerContact.name}
+                                Llamar a {pet.ownerContact?.name || "Dueño"}
                             </Button>
                         </a>
-                        <a href={`https://wa.me/${pet.ownerContact.phone.replace(/-/g, '')}`} target="_blank" rel="noreferrer" className="block w-full">
+                        <a href={`https://wa.me/${pet.ownerContact?.phone?.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="block w-full">
                             <Button className="w-full bg-green-500 hover:bg-green-600 text-white py-4 h-auto text-lg">
                                 <MessageCircle className="w-6 h-6 mr-2" />
                                 Enviar WhatsApp
@@ -90,9 +90,9 @@ const PublicProfile = () => {
                     <div className="mt-6 pt-4 border-t border-red-100">
                          <h3 className="font-bold text-slate-700 text-xs uppercase mb-2">Contacto Alternativo</h3>
                          <div className="flex justify-between items-center text-sm">
-                             <span className="text-slate-600">{pet.emergencyContact.name}</span>
-                             <a href={`tel:${pet.emergencyContact.phone}`} className="font-bold text-red-600 underline">
-                                {pet.emergencyContact.phone}
+                             <span className="text-slate-600">{pet.emergencyContact?.name}</span>
+                             <a href={`tel:${pet.emergencyContact?.phone}`} className="font-bold text-red-600 underline">
+                                {pet.emergencyContact?.phone}
                              </a>
                          </div>
                     </div>

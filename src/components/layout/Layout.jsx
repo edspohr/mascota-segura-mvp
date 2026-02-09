@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { useApp } from '../../context/Context';
+import { useApp } from '../../context';
 import { LogOut, ShieldAlert } from 'lucide-react';
 import BottomNav from './BottomNav';
 

@@ -6,6 +6,11 @@ export const mockData = {
       role: "owner",
       avatar:
         "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80",
+      phone: "+51 987 654 321",
+      emergencyContact: {
+        name: "Jorge Perez (Hermano)",
+        phone: "+51 999 111 222",
+      },
     },
     partner: {
       id: "u2",
@@ -27,6 +32,13 @@ export const mockData = {
       role: "superadmin",
       avatar:
         "https://ui-avatars.com/api/?name=Super+Admin&background=0D9488&color=fff",
+    },
+    staff: {
+      id: "u5",
+      name: "Staff Interno",
+      role: "staff",
+      avatar:
+        "https://ui-avatars.com/api/?name=Staff+Interno&background=6366f1&color=fff",
     },
   },
   organizations: [

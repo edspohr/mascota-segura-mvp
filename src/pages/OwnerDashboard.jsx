@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useApp } from '../context/Context';
+import { useApp } from '../context';
 import { QrCode, Calendar, ChevronRight, Share2, Plus, Activity } from 'lucide-react';
 import { Button, Card, Modal } from '../components/ui/Components';
 import { Link } from 'react-router-dom';
@@ -41,8 +41,8 @@ const OwnerDashboard = () => {
               <p className="text-3xl font-bold mt-1">{pets.length}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-             <span className="text-slate-400 text-xs font-medium">Próxima Vacuna</span>
-             <p className="text-slate-800 font-bold mt-1 text-sm bg-slate-50 inline-block px-2 py-1 rounded-md">20 Feb</p>
+             <span className="text-slate-400 text-xs font-medium">Backup de Emergencia</span>
+             <p className="text-slate-800 font-bold mt-1 text-sm">{user.emergencyContact?.name || "Sin asignar"}</p>
           </div>
       </div>
 

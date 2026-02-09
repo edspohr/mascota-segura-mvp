@@ -90,7 +90,23 @@ const AppProviderInternal = ({ children }) => {
   }
 
   const getPetBySlug = (slug) => {
-    return pets.find(p => p.slug === slug);
+    const foundPet = pets.find(p => p.slug === slug);
+    if (!foundPet) return null;
+
+    // Enrich with owner data for Public Profile
+    const owner = Object.values(mockData.users).find(u => u.id === foundPet.ownerId) || mockData.users.owner;
+    
+    return {
+        ...foundPet,
+        ownerContact: {
+            name: owner.name,
+            phone: owner.phone || "+51 999 999 999" // Fallback if missing
+        },
+        emergencyContact: owner.emergencyContact || {
+            name: "Contacto de Emergencia",
+            phone: "+51 999 888 777"
+        }
+    };
   };
   
   const getPetById = (id) => {

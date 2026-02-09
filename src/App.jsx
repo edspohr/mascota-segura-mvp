@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useApp } from './context/Context';
+import { useApp } from './context';
 import Layout from './components/layout/Layout';
 
 // Pages
