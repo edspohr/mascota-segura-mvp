@@ -8,12 +8,10 @@ import DevLogin from './pages/DevLogin';
 import PublicProfile from './pages/PublicProfile';
 import OwnerDashboard from './pages/OwnerDashboard';
 import PartnerDashboard from './pages/PartnerDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import VeterinaryDashboard from './pages/VeterinaryDashboard';
 
 function App() {
   const { user } = useApp();
-
 
   return (
     <Layout>
@@ -27,16 +25,12 @@ function App() {
           element={user?.role === 'owner' ? <OwnerDashboard /> : <Navigate to="/" />} 
         />
         <Route 
+          path="/veterinary" 
+          element={user?.role === 'veterinary' ? <VeterinaryDashboard /> : <Navigate to="/" />} 
+        />
+        <Route 
           path="/partner" 
           element={user?.role === 'partner' ? <PartnerDashboard /> : <Navigate to="/" />} 
-        />
-        <Route 
-          path="/admin" 
-          element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" />} 
-        />
-        <Route 
-          path="/superadmin" 
-          element={user?.role === 'superadmin' ? <SuperAdminDashboard /> : <Navigate to="/" />} 
         />
 
         {/* Catch all */}

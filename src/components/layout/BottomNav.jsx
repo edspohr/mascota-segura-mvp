@@ -10,15 +10,15 @@ const BottomNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg md:hidden z-50 pb-safe">
+    <div className="fixed bottom-0 left-0 right-0 bg-zinc-900/90 backdrop-blur-md border-t border-zinc-800 shadow-lg md:hidden z-50 pb-safe">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-full h-full space-y-1 ${
-                isActive ? 'text-teal-600' : 'text-slate-400 hover:text-slate-600'
+              `flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
+                isActive ? 'text-teal-400' : 'text-zinc-500 hover:text-zinc-300'
               }`
             }
           >

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { mockData } from '../data/mockData';
 import { ToastProvider } from '../components/ui/Toast';
 import { useToast } from './ToastContext';
@@ -15,18 +15,13 @@ export const AppProvider = ({ children }) => {
 const AppProviderInternal = ({ children }) => {
   const [user, setUser] = useState(null);
   const [pets, setPets] = useState(mockData.pets);
-  const [stats, setStats] = useState(mockData.stats);
-  const [organizations, setOrganizations] = useState(mockData.organizations);
-  const [usersList, setUsersList] = useState(mockData.usersList);
+  const [campaigns, setCampaigns] = useState(mockData.campaigns);
+  const [veterinaryData, setVeterinaryData] = useState(mockData.veterinaryData);
+  const [partnerData, setPartnerData] = useState(mockData.partnerData);
   const [loading, setLoading] = useState(false);
   
   // Use Toast context
   const { addToast } = useToast();
-
-  // Load initial data simulation
-  useEffect(() => {
-    // In a real app, we would fetch data here
-  }, []);
 
   const login = (role) => {
     setLoading(true);
@@ -69,23 +64,13 @@ const AppProviderInternal = ({ children }) => {
     );
   };
 
-  const updateStats = (type) => { // type: 'qrScans' or 'emergencyContacts'
-    setStats(prev => ({
-      ...prev,
-      [type]: prev[type] + 1
-    }));
-  };
-
   const triggerEmergency = (petId, reporterData) => {
-    updateStats('emergencyContacts');
     console.log(`EMERGENCY REPORTED FOR PET ${petId}:`, reporterData);
     addToast('Alerta de emergencia enviada', 'error');
-    // Here we would send notification to owner
     return true;
   };
   
   const recordScan = (petId) => {
-      updateStats('qrScans');
       console.log(`QR SCAN FOR PET ${petId}`);
   }
 
@@ -93,14 +78,13 @@ const AppProviderInternal = ({ children }) => {
     const foundPet = pets.find(p => p.slug === slug);
     if (!foundPet) return null;
 
-    // Enrich with owner data for Public Profile
     const owner = Object.values(mockData.users).find(u => u.id === foundPet.ownerId) || mockData.users.owner;
     
     return {
         ...foundPet,
         ownerContact: {
             name: owner.name,
-            phone: owner.phone || "+51 999 999 999" // Fallback if missing
+            phone: owner.phone || "+51 999 999 999" 
         },
         emergencyContact: owner.emergencyContact || {
             name: "Contacto de Emergencia",
@@ -113,46 +97,122 @@ const AppProviderInternal = ({ children }) => {
       return pets.find(p => p.id === id);
   }
 
-  // Super Admin Functions
-  const addOrganization = (org) => {
-    setOrganizations([...organizations, { ...org, id: Date.now().toString(), status: 'Active', users: 0 }]);
-    addToast('Organización creada', 'success');
+  // --- NEW MEMORY ACTIONS FOR MODALS ---
+  const addPet = (petData) => {
+    const newPet = {
+      id: `p${Date.now()}`,
+      slug: `${petData.name.toLowerCase()}-${Date.now()}`,
+      ...petData,
+      ownerId: user?.id,
+      logs: [],
+      upcomingEvents: [],
+      status: "safe",
+      compliance: 100
+    };
+    setPets([newPet, ...pets]);
+    addToast(`${petData.name} añadido con éxito`, 'success');
   };
 
-  const deleteOrganization = (id) => {
-    setOrganizations(organizations.filter(o => o.id !== id));
-    addToast('Organización eliminada', 'info');
+  const addLog = (petId, logData) => {
+    setPets(currentPets =>
+      currentPets.map(pet =>
+        pet.id === petId
+          ? {
+              ...pet,
+              logs: [{
+                id: `l${Date.now()}`,
+                date: new Date().toISOString().split('T')[0],
+                ...logData, // { type, content }
+                authorRole: user?.role,
+                authorName: user?.name
+              }, ...pet.logs]
+            }
+          : pet
+      )
+    );
+    addToast('Bitácora actualizada', 'success');
   };
 
-  const addUser = (userData) => {
-    setUsersList([...usersList, { ...userData, id: Date.now().toString(), status: 'Active' }]);
-    addToast('Usuario creado', 'success');
+  const registerVisit = (patientId, visitData) => {
+    // 1. Add to logs history of the pet
+    setPets(currentPets => 
+      currentPets.map(pet => {
+        if (pet.id === patientId || pet.name === patientId) { 
+           return {
+             ...pet,
+             logs: [{
+               id: `l${Date.now()}`,
+               date: new Date().toISOString().split('T')[0],
+               type: visitData.type,
+               content: visitData.description || `Atención registrada: ${visitData.type}`,
+               authorRole: user?.role,
+               authorName: user?.name
+             }, ...pet.logs],
+             upcomingEvents: visitData.nextDueDate ? [{
+               id: `e${Date.now()}`,
+               date: visitData.nextDueDate,
+               type: visitData.type,
+               description: `Refuerzo de ${visitData.type}`,
+               provider: user?.name
+             }] : pet.upcomingEvents
+           }
+        }
+        return pet;
+      })
+    );
+
+    // 2. Update the veterinary dashboard list
+    setVeterinaryData(prev => ({
+      ...prev,
+      recentPatients: prev.recentPatients.map(p => 
+        p.id === patientId ? { 
+          ...p, 
+          lastVisit: new Date().toISOString().split('T')[0],
+          nextDue: visitData.nextDueDate || p.nextDue,
+          status: 'ok'
+        } : p
+      )
+    }));
+
+    addToast('Atención registrada exitosamente. Notificación de refuerzo programada.', 'success');
   };
 
-  const deleteUser = (id) => {
-    setUsersList(usersList.filter(u => u.id !== id));
-    addToast('Usuario eliminado', 'info');
+  const addCampaign = (campaignData) => {
+    const newCampaign = {
+      id: `c${Date.now()}`,
+      partner: user?.name || "Partner",
+      redeemed: 0,
+      reach: 0,
+      active: true,
+      ...campaignData
+    };
+    setCampaigns([newCampaign, ...campaigns]);
+    setPartnerData(prev => ({
+      ...prev,
+      activeCampaigns: prev.activeCampaigns + 1
+    }));
+    addToast('Campaña lanzada con éxito a toda la red', 'success');
   };
 
   const value = {
     user,
     pets,
-    stats,
-    organizations,
-    usersList,
+    campaigns,
+    veterinaryData,
+    partnerData,
     loading,
-    login, // updated with toast
-    logout, // updated with toast
-    addMedicalRecord, // updated with toast
-    togglePetStatus, // New function with toast
-    triggerEmergency, // updated with toast
+    login,
+    logout,
+    addMedicalRecord,
+    togglePetStatus,
+    triggerEmergency,
     recordScan,
     getPetBySlug,
     getPetById,
-    addOrganization, // updated with toast
-    deleteOrganization, // updated with toast
-    addUser, // updated with toast
-    deleteUser // updated with toast
+    addPet,
+    registerVisit,
+    addCampaign,
+    addLog
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

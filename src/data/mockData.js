@@ -12,81 +12,22 @@ export const mockData = {
         phone: "+51 999 111 222",
       },
     },
-    partner: {
+    veterinary: {
       id: "u2",
       name: "Veterinaria Rondón",
-      role: "partner",
+      role: "veterinary",
       avatar:
-        "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=150&q=80",
+        "https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?auto=format&fit=crop&w=150&q=80",
       address: "Av. Principal 123, Lima",
     },
-    admin: {
+    partner: {
       id: "u3",
-      name: "Admin Mascota Segura",
-      role: "admin",
-      avatar: "https://ui-avatars.com/api/?name=Admin+Mascota",
-    },
-    superadmin: {
-      id: "u4",
-      name: "Super Admin Global",
-      role: "superadmin",
+      name: "Purina Partners",
+      role: "partner",
       avatar:
-        "https://ui-avatars.com/api/?name=Super+Admin&background=0D9488&color=fff",
-    },
-    staff: {
-      id: "u5",
-      name: "Staff Interno",
-      role: "staff",
-      avatar:
-        "https://ui-avatars.com/api/?name=Staff+Interno&background=6366f1&color=fff",
+        "https://ui-avatars.com/api/?name=Purina&background=0D9488&color=fff",
     },
   },
-  organizations: [
-    {
-      id: "o1",
-      name: "Veterinaria Rondón",
-      type: "Veterinaria",
-      status: "Active",
-      users: 5,
-    },
-    {
-      id: "o2",
-      name: "PetShop Lima",
-      type: "PetShop",
-      status: "Active",
-      users: 2,
-    },
-    {
-      id: "o3",
-      name: "Refugio Patitas",
-      type: "NGO",
-      status: "Pending",
-      users: 0,
-    },
-  ],
-  usersList: [
-    {
-      id: "u1",
-      name: "Betsy Cueva",
-      email: "betsy@example.com",
-      role: "Owner",
-      status: "Active",
-    },
-    {
-      id: "u2",
-      name: "Dr. Rondón",
-      email: "dr.rondon@vetrondon.com",
-      role: "Partner",
-      status: "Active",
-    },
-    {
-      id: "u3",
-      name: "Admin Mascota",
-      email: "admin@mascotasegura.com",
-      role: "Admin",
-      status: "Active",
-    },
-  ],
   pets: [
     {
       id: "p1",
@@ -99,50 +40,106 @@ export const mockData = {
       ownerId: "u1",
       photo:
         "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=500&q=80",
-      medicalHistory: [
+      logs: [
         {
-          id: "m1",
+          id: "l1",
           date: "2023-12-10",
           type: "Vacuna",
-          description: "Quíntuple (1/3)",
-          veterinarian: "Veterinaria Rondón",
+          content: "Aplicación vacuna Quíntuple (1/3)",
+          authorRole: "veterinary",
+          authorName: "Veterinaria Rondón",
         },
         {
-          id: "m2",
+          id: "l2",
           date: "2024-01-15",
           type: "Control",
-          description: "Desparasitación interna",
-          veterinarian: "Veterinaria Rondón",
+          content: "Desparasitación interna. Todo en orden, peso ideal.",
+          authorRole: "veterinary",
+          authorName: "Veterinaria Rondón",
+        },
+        {
+          id: "l3",
+          date: "2024-02-05",
+          type: "Nota",
+          content:
+            "Bobby estuvo jugando en el parque y se raspó un poco la patita. Lo limpié con suero.",
+          authorRole: "owner",
+          authorName: "Betsy Cueva",
         },
       ],
       upcomingEvents: [
         {
           id: "e1",
-          date: "2024-02-20",
+          date: "2024-03-20",
           type: "Vacuna",
           description: "Refuerzo anual antirrábica",
+          provider: "Veterinaria Rondón",
         },
       ],
-      status: "healthy", // healthy, lost, critical
+      status: "safe", // safe, lost, critical
+    },
+  ],
+  campaigns: [
+    {
+      id: "c1",
+      title: "20% DSCTO en Pro Plan",
+      description: "Por mantener las vacunas de Bobby al día.",
+      partner: "Purina",
+      redeemed: 142,
+      reach: 530,
+      active: true,
+      image:
+        "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=300&q=80",
     },
     {
-      id: "p2",
-      slug: "luna-lima-456",
-      name: "Luna",
-      species: "Gato",
-      breed: "Mestizo",
-      age: 2,
-      weight: "4kg",
-      ownerId: "u1",
-      photo:
-        "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=500&q=80",
-      medicalHistory: [],
-      upcomingEvents: [],
-      status: "healthy",
+      id: "c2",
+      title: "Antipulgas Bravecto",
+      description: "Protección 12 semanas al precio de 8.",
+      partner: "Bravecto",
+      redeemed: 89,
+      reach: 300,
+      active: true,
+      image:
+        "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=300&q=80",
     },
   ],
   stats: {
     qrScans: 12,
     emergencyContacts: 2,
+  },
+  veterinaryData: {
+    retentionRate: 85,
+    upcomingReminders: 42,
+    recentPatients: [
+      {
+        id: "rp1",
+        petName: "Bobby",
+        ownerName: "Betsy Cueva",
+        lastVisit: "2024-01-15",
+        nextDue: "2024-03-20",
+        status: "pending",
+      },
+      {
+        id: "rp2",
+        petName: "Luna",
+        ownerName: "Carlos Ruiz",
+        lastVisit: "2023-11-05",
+        nextDue: "2024-02-05",
+        status: "overdue",
+      },
+      {
+        id: "rp3",
+        petName: "Max",
+        ownerName: "Ana Soto",
+        lastVisit: "2024-02-10",
+        nextDue: "2024-05-10",
+        status: "ok",
+      },
+    ],
+  },
+  partnerData: {
+    activeCampaigns: 2,
+    totalRedeemed: 231,
+    totalVisibility: 830,
   },
 };
