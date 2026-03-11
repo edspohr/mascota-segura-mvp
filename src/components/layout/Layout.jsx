@@ -27,13 +27,13 @@ const Layout = ({ children }) => {
     <div className="min-h-screen bg-slate-50 pb-20 md:pb-0 text-slate-900">
       {/* Header - Light & Professional */}
       <header className={`bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-40 shadow-sm ${isOwner ? 'hidden md:block' : ''}`}>
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+        <div className="container mx-auto px-4 h-18 flex items-center justify-between">
             <Link to={
                 user?.role === 'owner' ? '/dashboard' : 
                 user?.role === 'veterinary' ? '/veterinary' : 
                 user?.role === 'partner' ? '/partner' : '/'
               } className="hover:opacity-90 transition-opacity">
-              <Logo className="h-14" />
+              <Logo className="h-12" />
             </Link>
 
           <div className="flex items-center gap-4">

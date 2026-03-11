@@ -9,7 +9,7 @@ export const Logo = ({ className = "h-10" }) => (
     <img 
       src="/Pakuna-logo.png" 
       alt="Pakuna Logo" 
-      className={`${className} w-auto object-contain shrink-0`} 
+      className={`${className} w-auto object-contain shrink-0 mix-blend-multiply`} 
     />
   </div>
 );
