@@ -32,8 +32,14 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && role !== requiredRole) {
-    return <Navigate to="/dashboard" replace />;
+  if (requiredRole) {
+    const rolesMatch = Array.isArray(requiredRole) 
+      ? requiredRole.includes(role) 
+      : role === requiredRole;
+      
+    if (!rolesMatch) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;
@@ -73,7 +79,7 @@ function App() {
         <Route 
           path="/veterinary" 
           element={
-            <ProtectedRoute requiredRole="veterinary">
+            <ProtectedRoute requiredRole={['veterinary', 'clinic_admin']}>
               <VeterinaryDashboard />
             </ProtectedRoute>
           } 

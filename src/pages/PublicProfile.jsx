@@ -8,9 +8,12 @@ import {
 import { getPetBySlug } from '../services/pets.service';
 import { recordScan, getGeolocation } from '../services/scans.service';
 import { getUserProfile } from '../services/auth.service';
+import { useApp } from '../context';
+import { MOCK_PETS, MOCK_USERS } from '../data/mockData';
 
 const PublicProfile = () => {
   const { slug } = useParams();
+  const { isDemo } = useApp();
 
   // Pet & owner state
   const [pet, setPet] = useState(null);
@@ -29,6 +32,17 @@ const PublicProfile = () => {
   // ── Load pet & owner ──────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
+      if (isDemo) {
+        const petData = MOCK_PETS.find(p => p.slug === slug);
+        if (!petData) { setLoading(false); return; }
+        
+        const ownerData = MOCK_USERS[petData.ownerId === 'mock-owner-001' ? 'owner' : 'super_admin'];
+        setPet(petData);
+        setOwner(ownerData);
+        setLoading(false);
+        return;
+      }
+
       const petData = await getPetBySlug(slug);
       if (!petData) { setLoading(false); return; }
 
@@ -47,7 +61,7 @@ const PublicProfile = () => {
       });
     };
     load();
-  }, [slug]);
+  }, [slug, isDemo]);
 
   // ── CASE 2: "Found safe" handler ──────────────────────────────
   const handleFoundSafe = async (e) => {

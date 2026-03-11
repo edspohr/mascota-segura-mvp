@@ -7,11 +7,12 @@ import { createPet } from '../services/pets.service';
 import { uploadPetPhoto } from '../services/storage.service';
 import Logo from '../components/ui/Logo';
 import { QrCode, CheckCircle, AlertTriangle } from 'lucide-react';
+import { MOCK_QR_CODES, MOCK_PETS } from '../data/mockData';
 
 const QROnboarding = () => {
   const { qrSlug } = useParams();
   const navigate = useNavigate();
-  const { user, firebaseUser, addToast } = useApp();
+  const { user, firebaseUser, addToast, isDemo } = useApp();
 
   const [qrStatus, setQrStatus] = useState('loading'); // loading | orphan | claimed | invalid
   const [linkedPetSlug, setLinkedPetSlug] = useState(null);
@@ -21,6 +22,20 @@ const QROnboarding = () => {
 
   useEffect(() => {
     const checkQR = async () => {
+      if (isDemo) {
+        const mockQr = MOCK_QR_CODES.find(q => q.slug === qrSlug.toUpperCase());
+        if (!mockQr) { setQrStatus('invalid'); return; }
+        
+        if (mockQr.status === 'claimed' && mockQr.petId) {
+          const mockPet = MOCK_PETS.find(p => p.id === mockQr.petId);
+          if (mockPet) setLinkedPetSlug(mockPet.slug);
+          setQrStatus('claimed');
+        } else {
+          setQrStatus('orphan');
+        }
+        return;
+      }
+
       const q = query(collection(db, 'qrCodes'), where('slug', '==', qrSlug.toUpperCase()), limit(1));
       const snap = await getDocs(q);
       if (snap.empty) { setQrStatus('invalid'); return; }
@@ -42,10 +57,16 @@ const QROnboarding = () => {
       }
     };
     checkQR();
-  }, [qrSlug, firebaseUser, navigate]);
+  }, [qrSlug, firebaseUser, navigate, isDemo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isDemo) {
+      addToast(`[DEMO] ¡${form.name} registrado! Tu placa QR ya está activa (simulado).`, 'success');
+      navigate('/dashboard');
+      return;
+    }
+
     if (!firebaseUser) return;
     setSubmitting(true);
     try {
