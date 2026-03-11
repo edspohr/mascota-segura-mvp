@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context';
 import { usePartnerCampaigns } from '../hooks/useCampaigns';
 import { createCampaign } from '../services/campaigns.service';
 import { Card, Button, Modal, Input } from '../components/ui/Components';
 import Logo from '../components/ui/Logo';
 import { BarChart3, Eye, Ticket, MousePointerClick, Rocket, Search, ChevronRight } from 'lucide-react';
+import { MOCK_CAMPAIGNS } from '../data/mockData';
 
 const PartnerDashboard = () => {
-  const { firebaseUser, profile, addToast } = useApp();
-  const { campaigns, loading } = usePartnerCampaigns(firebaseUser?.uid);
+  const { firebaseUser, profile, addToast, isDemo } = useApp();
+  const { campaigns: realCampaigns, loading: realLoading } = usePartnerCampaigns(firebaseUser?.uid);
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isDemo) {
+        setCampaigns(MOCK_CAMPAIGNS);
+        setLoading(false);
+    } else {
+        setCampaigns(realCampaigns);
+        setLoading(realLoading);
+    }
+  }, [isDemo, realCampaigns, realLoading]);
 
   const [newCampaign, setNewCampaign] = useState({
       title: '',
@@ -20,6 +33,14 @@ const PartnerDashboard = () => {
 
   const handleCreateCampaign = async (e) => {
       e.preventDefault();
+      
+      if (isDemo) {
+        addToast('[DEMO] ¡Campaña lanzada con éxito! (simulado)', 'success');
+        setShowCampaignModal(false);
+        setNewCampaign({ title: '', description: '', imageURL: newCampaign.imageURL });
+        return;
+      }
+
       if (!firebaseUser) return;
       setSubmitting(true);
       try {
@@ -52,7 +73,7 @@ const PartnerDashboard = () => {
           <Logo className="w-12 h-12" />
           <div>
             <h1 className="text-3xl font-black text-[#00457C] tracking-tight">Marketing Hub</h1>
-            <p className="text-slate-500 font-medium">{profile?.name || 'Partner Estratégico'} | Targeting de Alta Precisión</p>
+            <p className="text-slate-500 font-medium">{profile?.name || (isDemo ? 'PetMarket Premium' : 'Partner Estratégico')} | Targeting de Alta Precisión</p>
           </div>
         </div>
         <div className="flex items-center">
@@ -66,7 +87,7 @@ const PartnerDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard 
           title="Campañas" 
-          value={campaigns.filter(c => c.active).length} 
+          value={campaigns.filter(c => c.active || isDemo).length} 
           icon={<BarChart3 className="w-6 h-6 text-blue-900" />}
         />
         <MetricCard 
@@ -220,3 +241,4 @@ const CampaignStatsCard = ({ campaign }) => {
 };
 
 export default PartnerDashboard;
+

@@ -7,9 +7,10 @@ import { addEvent } from '../services/events.service';
 import { Card, Button, Modal, Input } from '../components/ui/Components';
 import Logo from '../components/ui/Logo';
 import { Users, BellRing, TrendingUp, CheckCircle2, AlertCircle, PlusCircle, Search, Calendar } from 'lucide-react';
+import { MOCK_PATIENTS } from '../data/mockData';
 
 const VeterinaryDashboard = () => {
-  const { firebaseUser, profile, addToast } = useApp();
+  const { firebaseUser, profile, addToast, isDemo } = useApp();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +27,11 @@ const VeterinaryDashboard = () => {
 
   useEffect(() => {
     const loadPatients = async () => {
+      if (isDemo) {
+        setPatients(MOCK_PATIENTS);
+        setLoading(false);
+        return;
+      }
       if (!profile?.clinicId && profile?.role !== 'veterinary') {
         setLoading(false);
         return;
@@ -41,7 +47,7 @@ const VeterinaryDashboard = () => {
       }
     };
     loadPatients();
-  }, [profile]);
+  }, [profile, isDemo]);
 
   const handleOpenVisitModal = (patient) => {
       setSelectedPatient(patient);
@@ -58,7 +64,15 @@ const VeterinaryDashboard = () => {
 
   const handleRegisterVisit = async (e) => {
       e.preventDefault();
-      if (!selectedPatient || !firebaseUser) return;
+      if (!selectedPatient) return;
+
+      if (isDemo) {
+        addToast(`[DEMO] Atención certificada para ${selectedPatient.name} (simulado)`, 'success');
+        setShowVisitModal(false);
+        return;
+      }
+
+      if (!firebaseUser) return;
       setSubmittingVisit(true);
       try {
           await addLog(selectedPatient.id, {
@@ -85,6 +99,11 @@ const VeterinaryDashboard = () => {
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
     </div>
+  );
+
+  const filteredPatients = patients.filter(p => 
+    (p.name || p.petName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.ownerName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -159,29 +178,30 @@ const VeterinaryDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {patients.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(patient => (
+              {filteredPatients.map(patient => (
                 <tr key={patient.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                            <img src={patient.photoURL || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=80&q=80"} className="w-12 h-12 rounded-2xl object-cover shadow-sm" />
+                            <img src={patient.photoURL || patient.petPhotoURL || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=80&q=80"} className="w-12 h-12 rounded-2xl object-cover shadow-sm" />
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-teal-500 border-2 border-white rounded-full" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-black text-blue-900 leading-none mb-1">{patient.name}</span>
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{patient.species} • {patient.breed}</span>
+                            <span className="font-black text-blue-900 leading-none mb-1">{patient.name || patient.petName}</span>
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{patient.species || patient.petSpecies} • {patient.breed || patient.petBreed}</span>
                         </div>
                       </div>
                   </td>
                   <td className="px-8 py-6">
                       <div className="flex items-center gap-2 text-slate-600 font-medium">
                           <Calendar className="w-4 h-4 text-slate-300" />
-                          <span>Ult. Visita: Mar 2026</span>
+                          <span>Ult. Visita: {patient.lastVisit || 'Mar 2026'}</span>
                       </div>
                   </td>
                   <td className="px-8 py-6">
-                    {patient.status === 'safe' && <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest bg-teal-50 text-teal-700 border border-teal-100"><CheckCircle2 className="w-3.5 h-3.5" /> CERTIFICADO</span>}
-                    {patient.status === 'lost' && <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest bg-amber-50 text-amber-700 border border-amber-100 animate-pulse"><AlertCircle className="w-3.5 h-3.5" /> EXTRAVIADO</span>}
+                    {(patient.status === 'safe' || patient.compliance >= 80) && <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest bg-teal-50 text-teal-700 border border-teal-100"><CheckCircle2 className="w-3.5 h-3.5" /> CERTIFICADO</span>}
+                    {(patient.status === 'lost' || (patient.compliance < 80 && patient.compliance > 0)) && <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest bg-amber-50 text-amber-700 border border-amber-100 animate-pulse"><AlertCircle className="w-3.5 h-3.5" /> ALERTADO</span>}
+                    {!patient.status && !patient.compliance && <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest bg-slate-50 text-slate-500 border border-slate-100">SIN DATOS</span>}
                   </td>
                   <td className="px-8 py-6 text-right">
                     <Button onClick={() => handleOpenVisitModal(patient)} className="bg-blue-900 border-none hover:bg-slate-800 text-xs py-2.5 px-6 rounded-xl font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 active:scale-95 transition-all">
@@ -196,13 +216,13 @@ const VeterinaryDashboard = () => {
       </div>
 
       {/* Register Visit Modal */}
-      <Modal isOpen={showVisitModal} onClose={() => setShowVisitModal(false)} title={`Atención Preventiva: ${selectedPatient?.name}`}>
+      <Modal isOpen={showVisitModal} onClose={() => setShowVisitModal(false)} title={`Atención Preventiva: ${selectedPatient?.name || selectedPatient?.petName}`}>
         <form onSubmit={handleRegisterVisit} className="space-y-8">
              <div className="bg-blue-900 text-white p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10" />
                 <h4 className="text-lg font-black mb-2 relative z-10">Validación Pakuna Health</h4>
                 <p className="text-blue-100 text-sm font-medium relative z-10 leading-relaxed">
-                    Al certificar esta atención, la credencial inteligente de {selectedPatient?.name} se actualizará globalmente y se programará el recordatorio automático para el dueño.
+                    Al certificar esta atención, la credencial inteligente de {selectedPatient?.name || selectedPatient?.petName} se actualizará globalmente y se programará el recordatorio automático para el dueño.
                 </p>
              </div>
 
@@ -266,3 +286,5 @@ const MetricCard = ({ title, value, trend, icon }) => (
 );
 
 export default VeterinaryDashboard;
+
+

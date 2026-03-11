@@ -10,12 +10,17 @@ import { Card, Button, Modal, Input } from '../components/ui/Components';
 import Logo from '../components/ui/Logo';
 import { ShieldCheck, Activity, Gift, ChevronRight, AlertTriangle, Plus, Copy, Check, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { MOCK_PETS, MOCK_CAMPAIGNS, MOCK_LOGS } from '../data/mockData';
 
 const OwnerDashboard = () => {
-  const { firebaseUser, profile, addToast } = useApp();
-  const { pets, loading: loadingPets } = usePets(firebaseUser?.uid);
-  const { campaigns } = useActiveCampaigns();
+  const { firebaseUser, profile, addToast, isDemo } = useApp();
+  const { pets: realPets, loading: loadingPets } = usePets(firebaseUser?.uid);
+  const { campaignsValue: realCampaigns } = useActiveCampaigns();
   
+  // Use mock data if in demo mode
+  const pets = isDemo ? MOCK_PETS : realPets;
+  const campaigns = isDemo ? MOCK_CAMPAIGNS : (realCampaigns || []);
+
   const [showAddPetModal, setShowAddPetModal] = useState(false);
   const [newPet, setNewPet] = useState({ name: '', species: 'Perro', breed: '', age: '', weight: '', funFact: '', medicalAlerts: '' });
   const [photoFile, setPhotoFile] = useState(null);
@@ -23,6 +28,11 @@ const OwnerDashboard = () => {
 
   const handleAddPet = async (e) => {
     e.preventDefault();
+    if (isDemo) {
+      addToast(`[DEMO] ${newPet.name} registrado con éxito (simulado)`, 'success');
+      setShowAddPetModal(false);
+      return;
+    }
     if (!firebaseUser) return;
     setSubmitting(true);
     try {
@@ -42,7 +52,7 @@ const OwnerDashboard = () => {
     }
   };
 
-  if (loadingPets) {
+  if (loadingPets && !isDemo) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
@@ -74,7 +84,7 @@ const OwnerDashboard = () => {
 
       {/* Pet ID Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {pets.length > 0 ? (
+        {(pets && pets.length > 0) ? (
           pets.map(pet => (
             <PetIDCard key={pet.id} pet={pet} />
           ))
@@ -103,7 +113,7 @@ const OwnerDashboard = () => {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {campaigns.map(campaign => (
+          {(campaigns || []).map(campaign => (
             <CampaignCard key={campaign.id} campaign={campaign} />
           ))}
         </div>
@@ -160,7 +170,7 @@ const OwnerDashboard = () => {
 };
 
 const PetIDCard = ({ pet }) => {
-  const { addToast } = useApp();
+  const { addToast, isDemo } = useApp();
   const compliance = pet.compliance || 100;
   const isLost = pet.status === 'lost';
   const [copied, setCopied] = useState(false);
@@ -176,6 +186,10 @@ const PetIDCard = ({ pet }) => {
   };
 
   const handleToggleStatus = async () => {
+    if (isDemo) {
+      addToast(`[DEMO] Estado cambiado a: ${isLost ? 'Seguro' : 'Extraviado'} (simulado)`, 'info');
+      return;
+    }
     try {
       const newStatus = isLost ? 'safe' : 'lost';
       await updatePetStatus(pet.id, newStatus);
@@ -273,14 +287,25 @@ const PetIDCard = ({ pet }) => {
 };
 
 const BitacoraModal = ({ pet, onClose }) => {
-  const { firebaseUser, profile, addToast } = useApp();
-  const { logs } = usePetLogs(pet.id);
+  const { firebaseUser, profile, addToast, isDemo } = useApp();
+  const { logs: realLogs } = usePetLogs(pet.id);
   const [newNote, setNewNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Use mock logs if in demo mode
+  const logs = isDemo ? (MOCK_LOGS[pet.id] || []) : realLogs;
+
   const handleAddNote = async (e) => {
     e.preventDefault();
-    if (!newNote.trim() || !firebaseUser) return;
+    if (!newNote.trim()) return;
+    
+    if (isDemo) {
+      addToast(`[DEMO] Nota publicada (simulada)`, 'success');
+      setNewNote('');
+      return;
+    }
+
+    if (!firebaseUser) return;
     setSubmitting(true);
     try {
       await addLog(pet.id, { type: 'Nota', content: newNote }, { uid: firebaseUser.uid, name: profile.name, role: profile.role });
@@ -331,20 +356,22 @@ const BitacoraModal = ({ pet, onClose }) => {
              </form>
 
              <div className="relative pl-6 space-y-8 before:absolute before:inset-y-0 before:left-6 before:w-[2px] before:bg-slate-100">
-                {logs.length > 0 ? logs.map(log => (
+                {logs && logs.length > 0 ? logs.map(log => (
                   <div key={log.id} className="relative z-10 flex gap-6 animate-in slide-in-from-left-4 fade-in duration-500">
                     <div className={`w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center shadow-lg ring-4 ring-white ${log.authorRole === 'veterinary' ? 'bg-teal-500' : 'bg-blue-900'}`}>
                        {log.authorRole === 'veterinary' ? <Activity className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />}
                     </div>
-                    <div className="flex-grow p-6 bg-slate-50 rounded-[1.5rem rounded-tl-none border border-slate-100">
+                    <div className="flex-grow p-6 bg-slate-50 rounded-[1.5rem] rounded-tl-none border border-slate-100">
                        <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-4">
                          <div className="flex flex-col">
                            <span className="font-black text-blue-900 text-sm tracking-tight">{log.authorName}</span>
                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest w-fit mt-1 ${log.authorRole === 'veterinary' ? 'bg-teal-100 text-teal-700' : 'bg-blue-100 text-blue-900'}`}>
-                             {log.authorRole === 'veterinary' ? 'Veterinario Certificado' : 'Proprietario'}
+                             {log.authorRole === 'veterinary' ? 'Veterinario Certificado' : 'Propietario'}
                            </span>
                          </div>
-                         <span className="text-[10px] font-bold text-slate-400 capitalize">{new Date(log.createdAt?.seconds * 1000).toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                         <span className="text-[10px] font-bold text-slate-400 capitalize">
+                           {log.date || (log.createdAt?.seconds ? new Date(log.createdAt.seconds * 1000).toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Reciente')}
+                         </span>
                        </div>
                        <p className="text-xs font-black text-teal-600 mb-2 uppercase tracking-wide">{log.type}</p>
                        <p className="text-slate-600 text-sm leading-relaxed font-medium">{log.content}</p>
@@ -379,3 +406,4 @@ const CampaignCard = ({ campaign }) => (
 );
 
 export default OwnerDashboard;
+

@@ -4,6 +4,8 @@ import { useApp } from '../../context';
 import { LogOut } from 'lucide-react';
 import BottomNav from './BottomNav';
 import Logo from '../ui/Logo';
+import { DemoToolbar } from '../ui/DemoToolbar';
+import { DEMO_MODE } from '../../config/demo';
 
 const Layout = ({ children }) => {
   const { pathname } = useLocation();
@@ -20,7 +22,12 @@ const Layout = ({ children }) => {
   };
 
   if (isLanding || isPublicProfile) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        {DEMO_MODE && <DemoToolbar />}
+      </>
+    );
   }
 
   return (
@@ -60,6 +67,9 @@ const Layout = ({ children }) => {
 
       {/* Bottom Nav for Owners on Mobile */}
       {isOwner && <BottomNav />}
+
+      {/* Demo functionality */}
+      {DEMO_MODE && <DemoToolbar />}
     </div>
   );
 };

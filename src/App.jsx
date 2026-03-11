@@ -11,6 +11,7 @@ import QROnboarding from './pages/QROnboarding';
 import OwnerDashboard from './pages/OwnerDashboard';
 import PartnerDashboard from './pages/PartnerDashboard';
 import VeterinaryDashboard from './pages/VeterinaryDashboard';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 
 /**
  * ProtectedRoute Wrapper
@@ -37,9 +38,8 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   return children;
 };
-
 function App() {
-  const { firebaseUser, role, loading } = useApp();
+  const { role } = useApp();
 
   return (
     <Layout>
@@ -61,6 +61,8 @@ function App() {
                 <Navigate to="/veterinary" replace />
               ) : role === 'partner' ? (
                 <Navigate to="/partner" replace />
+              ) : role === 'super_admin' ? (
+                <Navigate to="/admin" replace />
               ) : (
                 <OwnerDashboard />
               )}
@@ -81,7 +83,16 @@ function App() {
           path="/partner" 
           element={
             <ProtectedRoute requiredRole="partner">
-              <PartnerDashboard />
+               <PartnerDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute requiredRole="super_admin">
+              <SuperAdminDashboard />
             </ProtectedRoute>
           } 
         />

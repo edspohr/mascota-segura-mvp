@@ -4,6 +4,77 @@ import { loginWithEmail, loginWithGoogle, registerWithEmail } from '../services/
 import { useApp } from '../context';
 import Logo from '../components/ui/Logo';
 import { Button, Input } from '../components/ui/Components';
+import { DEMO_MODE } from '../config/demo';
+import { DEV_LOGIN_ROLES } from '../data/mockData';
+
+const colorMap = {
+  teal:   { bg: 'bg-teal-500/10',   border: 'border-teal-500/30',   text: 'text-teal-600',   hover: 'hover:bg-teal-500/20'   },
+  blue:   { bg: 'bg-blue-500/10',   border: 'border-blue-500/30',   text: 'text-blue-600',   hover: 'hover:bg-blue-500/20'   },
+  violet: { bg: 'bg-violet-500/10', border: 'border-violet-500/30', text: 'text-violet-600', hover: 'hover:bg-violet-500/20' },
+  amber:  { bg: 'bg-amber-500/10',  border: 'border-amber-500/30',  text: 'text-amber-600',  hover: 'hover:bg-amber-500/20'  },
+  red:    { bg: 'bg-red-500/10',    border: 'border-red-500/30',    text: 'text-red-600',    hover: 'hover:bg-red-500/20'    },
+};
+
+const roleRoutes = {
+  owner: '/dashboard',
+  veterinary: '/veterinary',
+  clinic_admin: '/veterinary',
+  partner: '/partner',
+  super_admin: '/dashboard',
+};
+
+export const DevLoginPanel = () => {
+  const { demoLoginAs, addToast } = useApp();
+  const navigate = useNavigate();
+
+  const handleDevLogin = (role) => {
+    demoLoginAs(role);
+    addToast(`Sesión demo: ${role}`, 'success');
+    navigate(roleRoutes[role]);
+  };
+
+  return (
+    <div className="w-full max-w-md mt-6">
+      {/* Badge */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 h-px bg-slate-200" />
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-3
+                         bg-white border border-slate-100 rounded-full py-1 shadow-sm">
+          🛠 Acceso Demo
+        </span>
+        <div className="flex-1 h-px bg-slate-200" />
+      </div>
+
+      {/* Role buttons */}
+      <div className="flex flex-col gap-2">
+        {DEV_LOGIN_ROLES.map(({ role, label, description, emoji, color }) => {
+          const c = colorMap[color];
+          return (
+            <button
+              key={role}
+              onClick={() => handleDevLogin(role)}
+              className={`flex items-center gap-4 w-full px-4 py-3.5 rounded-2xl border
+                          ${c.bg} ${c.border} ${c.hover} transition-all text-left group active:scale-[0.98]`}
+            >
+              <span className="text-2xl flex-shrink-0 group-hover:scale-110 transition-transform">{emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className={`font-bold text-sm ${c.text}`}>{label}</p>
+                <p className="text-slate-500 text-[11px] mt-0.5 truncate font-medium">{description}</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-400 flex-shrink-0 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-center text-[10px] font-bold text-slate-300 mt-4 uppercase tracking-widest">
+        Modo demo activo — No se requiere cuenta real
+      </p>
+    </div>
+  );
+};
 
 const Login = () => {
   const [tab, setTab] = useState('login'); // 'login' | 'register'
@@ -80,14 +151,14 @@ const Login = () => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-12">
+        <div className="flex flex-col items-center mb-12 animate-in fade-in zoom-in duration-700">
           <Logo className="h-14 mb-4" />
           <h1 className="text-3xl font-extrabold text-[#00457C] tracking-tight">PAKUNA</h1>
           <p className="text-slate-500 text-sm font-semibold tracking-wide uppercase mt-1">Pet Health Hub</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-2xl shadow-slate-200/50">
+        <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-2xl shadow-slate-200/50 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
 
           {/* Tabs */}
           <div className="flex rounded-2xl bg-slate-50 p-1.5 mb-8 border border-slate-100">
@@ -222,6 +293,9 @@ const Login = () => {
             Continuar con Google
           </button>
         </div>
+
+        {/* Dev Login Panel — only in demo mode */}
+        {DEMO_MODE && <DevLoginPanel />}
 
         <p className="text-center text-xs text-slate-400 mt-8 font-medium">
           Al unirte aceptas nuestros{' '}
