@@ -33,7 +33,7 @@ const Layout = ({ children }) => {
                 user?.role === 'veterinary' ? '/veterinary' : 
                 user?.role === 'partner' ? '/partner' : '/'
               } className="hover:opacity-90 transition-opacity">
-              <Logo withText className="h-8" />
+              <Logo className="h-10" />
             </Link>
 
           <div className="flex items-center gap-4">
