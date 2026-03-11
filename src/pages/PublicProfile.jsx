@@ -24,7 +24,6 @@ const PublicProfile = () => {
   const [reporterPhone, setReporterPhone] = useState('');
 
   // Case 3 flow state
-  const [showEmergencyContact, setShowEmergencyContact] = useState(false);
   const [reportSent, setReportSent] = useState(false);
 
   // ── Load pet & owner ──────────────────────────────────────────
