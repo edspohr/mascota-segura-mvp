@@ -6,7 +6,6 @@ import Logo from '../components/ui/Logo';
 import { Button, Input } from '../components/ui/Components';
 import { DEMO_MODE } from '../config/demo';
 import { DEV_LOGIN_ROLES } from '../data/mockData';
-import { isDemoUnlocked, unlockDemo } from '../hooks/useMockAuth';
 
 const colorMap = {
   teal:   { bg: 'bg-teal-500/10',   border: 'border-teal-500/30',   text: 'text-teal-600',   hover: 'hover:bg-teal-500/20'   },
@@ -73,95 +72,6 @@ export const DevLoginPanel = () => {
       <p className="text-center text-[10px] font-bold text-slate-300 mt-4 uppercase tracking-widest">
         Modo demo activo — No se requiere cuenta real
       </p>
-    </div>
-  );
-};
-
-/**
- * DemoGate — renders a hidden trigger on the login page.
- * Three invisible dots at the bottom of the page open a password field.
- * Correct code → DevLoginPanel appears. Wrong code → red error message.
- * Unlocked state persists for the duration of the browser session.
- */
-const DemoGate = () => {
-  const [unlocked, setUnlocked] = useState(isDemoUnlocked());
-  const [showInput, setShowInput] = useState(false);
-  const [code, setCode] = useState('');
-  const [error, setError] = useState(false);
-  const [shake, setShake] = useState(false);
-
-  const handleUnlock = (e) => {
-    e.preventDefault();
-    if (unlockDemo(code)) {
-      setUnlocked(true);
-      setError(false);
-      setShowInput(false);
-    } else {
-      setError(true);
-      setCode('');
-      // Brief shake animation to signal wrong code
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      setShowInput(false);
-      setCode('');
-      setError(false);
-    }
-  };
-
-  // Already unlocked → show the full role panel
-  if (unlocked) return <DevLoginPanel />;
-
-  return (
-    <div className="mt-8 flex flex-col items-center gap-3">
-      {!showInput ? (
-        // Hidden trigger — three dots, nearly invisible on dark background
-        <button
-          onClick={() => setShowInput(true)}
-          aria-label="Acceso especial"
-          className="text-slate-200 hover:text-slate-300 text-sm transition-colors
-                     select-none tracking-widest px-4 py-2 opacity-50"
-        >
-          · · ·
-        </button>
-      ) : (
-        <form
-          onSubmit={handleUnlock}
-          onKeyDown={handleKeyDown}
-          className={`flex gap-2 transition-transform ${shake ? 'animate-bounce' : ''}`}
-        >
-          <input
-            autoFocus
-            type="password"
-            value={code}
-            onChange={(e) => { setCode(e.target.value); setError(false); }}
-            placeholder="Código de acceso"
-            className={`bg-white border rounded-xl px-4 py-2.5 text-slate-900 text-sm
-                        w-44 focus:outline-none focus:ring-2 transition-colors
-                        ${error
-                          ? 'border-red-500/60 focus:ring-red-500/40'
-                          : 'border-slate-200 focus:ring-teal-500/40'
-                        }`}
-          />
-          <button
-            type="submit"
-            className="bg-slate-900 hover:bg-slate-800 border border-slate-900
-                       text-white text-sm px-4 py-2.5 rounded-xl transition-colors"
-          >
-            Entrar
-          </button>
-        </form>
-      )}
-
-      {error && (
-        <p className="text-red-400 text-xs animate-pulse">
-          Código incorrecto. Intenta de nuevo.
-        </p>
-      )}
     </div>
   );
 };
@@ -384,8 +294,8 @@ const Login = () => {
           </button>
         </div>
 
-        {/* Demo Gate — always present, unlocked via password */}
-        {DEMO_MODE && <DemoGate />}
+        {/* Dev Login Panel — only in demo mode */}
+        {DEMO_MODE && <DevLoginPanel />}
 
         <p className="text-center text-xs text-slate-400 mt-8 font-medium">
           Al unirte aceptas nuestros{' '}

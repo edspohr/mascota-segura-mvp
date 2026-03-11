@@ -3,7 +3,7 @@ import { ToastProvider } from '../components/ui/Toast';
 import { useToast } from './ToastContext';
 import { AppContext } from './Context';
 import { useAuth } from '../hooks/useAuth';
-import { useMockAuth, isDemoUnlocked, lockDemo } from '../hooks/useMockAuth';
+import { useMockAuth } from '../hooks/useMockAuth';
 import { logout as logoutService } from '../services/auth.service';
 import { DEMO_MODE } from '../config/demo';
 
@@ -18,12 +18,12 @@ const AppProviderInternal = ({ children }) => {
   const mockAuth = useMockAuth();
   const { addToast } = useToast();
 
-  // In demo mode, bypass Firebase only if session is unlocked
-  const auth = DEMO_MODE && isDemoUnlocked() ? mockAuth : realAuth;
+  // In demo mode, bypass Firebase entirely
+  const auth = DEMO_MODE ? mockAuth : realAuth;
 
   const handleLogout = async () => {
-    if (DEMO_MODE && isDemoUnlocked()) {
-      lockDemo();
+    if (DEMO_MODE) {
+      mockAuth.logout();
     } else {
       await logoutService();
     }
@@ -43,8 +43,8 @@ const AppProviderInternal = ({ children }) => {
     addToast,
     logout: handleLogout,
     // Expose loginAs only in demo mode (used by Login page)
-    demoLoginAs: DEMO_MODE && isDemoUnlocked() ? mockAuth.loginAs : null,
-    isDemo: DEMO_MODE && isDemoUnlocked(),
+    demoLoginAs: DEMO_MODE ? mockAuth.loginAs : null,
+    isDemo: DEMO_MODE,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

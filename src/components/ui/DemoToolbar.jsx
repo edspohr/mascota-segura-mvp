@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context';
 import { DEMO_MODE } from '../../config/demo';
 import { DEV_LOGIN_ROLES } from '../../data/mockData';
-import { isDemoUnlocked } from '../../hooks/useMockAuth';
 
 const roleRoutes = {
   owner: '/dashboard',
@@ -18,8 +17,7 @@ export const DemoToolbar = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  // Only show toolbar when demo is both enabled AND unlocked
-  if (!DEMO_MODE || !isDemoUnlocked() || !role) return null;
+  if (!DEMO_MODE || !role) return null;
 
   const current = DEV_LOGIN_ROLES.find(r => r.role === role);
 
