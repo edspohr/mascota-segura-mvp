@@ -5,6 +5,7 @@ import { LogOut } from 'lucide-react';
 import BottomNav from './BottomNav';
 import Logo from '../ui/Logo';
 import { DemoToolbar } from '../ui/DemoToolbar';
+import { DemoBanner } from '../ui/DemoBanner';
 import { DEMO_MODE } from '../../config/demo';
 
 const Layout = ({ children }) => {
@@ -24,6 +25,7 @@ const Layout = ({ children }) => {
   if (isLanding || isPublicProfile) {
     return (
       <>
+        {DEMO_MODE && <DemoBanner />}
         {children}
         {DEMO_MODE && <DemoToolbar />}
       </>
@@ -32,6 +34,7 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 md:pb-0 text-slate-900">
+      {DEMO_MODE && <DemoBanner />}
       {/* Header - Light & Professional */}
       <header className={`bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-40 shadow-sm ${isOwner ? 'hidden md:block' : ''}`}>
         <div className="container mx-auto px-4 h-18 flex items-center justify-between">
