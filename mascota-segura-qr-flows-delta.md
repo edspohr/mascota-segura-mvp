@@ -1,3 +1,106 @@
+# QR SCAN FLOWS — DELTA PATCH
+## Apply on top of: `mascota-segura-agent-prompt.md`
+
+> This document overrides and extends `PublicProfile.jsx`, the `scans` schema,
+> the `pets` schema, and the `onQRScanned` Cloud Function as defined in the main
+> prompt. All other files remain unchanged.
+>
+> **Language rule applies here too:** every user-facing string must be in Spanish.
+
+---
+
+## DECISIONS LOCKED IN
+
+| Decision | Resolution |
+|---|---|
+| WhatsApp relay chatbot | ❌ Dropped — use direct `wa.me` deep link instead |
+| When to reveal owner phone | Only when owner has activated **Modo Perdido** (`status === 'lost'`) |
+| Marketplace B2B | ❌ Post-MVP — render placeholder button only |
+| Push notifications | ❌ Post-MVP — email via Resend is sufficient for MVP |
+
+---
+
+## SECTION A — SCHEMA CHANGES
+
+### A.1 Add fields to `/pets/{petId}`
+
+Add the following two fields to the Firestore pet document. Both are optional
+(empty string by default) so existing pets are not affected:
+
+```javascript
+funFact: string,        // e.g. "Le encanta perseguir palomas" — shown on public profile
+medicalAlerts: string,  // e.g. "Alérgico a ibuprofeno. Toma enalapril 2.5mg." — shown ONLY in emergency mode
+```
+
+Update `createPet()` in `src/services/pets.service.js` to include these fields
+with empty string defaults:
+
+```javascript
+// Inside createPet(), add to the addDoc payload:
+funFact: petData.funFact || '',
+medicalAlerts: petData.medicalAlerts || '',
+```
+
+Add both fields to the pet creation form in `OwnerDashboard.jsx`:
+- **Dato curioso** (textarea, max 120 chars, placeholder: "Ej: Le encanta perseguir palomas")
+- **Alertas médicas** (textarea, max 300 chars, placeholder: "Ej: Alérgico a ibuprofeno. Solo para uso veterinario/emergencias.")
+- Add a note below the medical alerts field:
+  `"⚠️ Solo visible cuando la mascota está en Modo Perdido."`
+
+### A.2 Add new scan type
+
+The `type` field in `/scans/{scanId}` now has three possible values:
+
+```
+type: 'normal' | 'found_safe' | 'emergency'
+```
+
+- `normal` — passive scan, no button pressed, pet is safe
+- `found_safe` — third party pressed "¿Encontraste a esta mascota?" while pet status is `safe`
+- `emergency` — pet status is `lost` and third party submitted reporter data
+
+### A.3 Add spam control collection
+
+New Firestore collection for rate limiting. Documents are keyed by
+`{petId}_{anonymizedIp}` and auto-expire via Firestore TTL:
+
+```
+/scan_sessions/{sessionId}
+  petId: string
+  ip: string        // last two octets only, e.g. "*.*.45.123"
+  lastScan: Timestamp
+  expireAt: Timestamp  // set to lastScan + 10 minutes (used by Firestore TTL policy)
+```
+
+> **One-time setup:** Enable Firestore TTL on this collection:
+> Firebase Console → Firestore → Indexes → TTL policies → Add policy
+> Collection: `scan_sessions` · Field: `expireAt`
+
+---
+
+## SECTION B — THREE-CASE LOGIC IN `PublicProfile.jsx`
+
+Replace the entire data-loading and rendering logic in `PublicProfile.jsx` with
+the implementation below. **Do not change any existing Tailwind classNames** —
+only add new conditional rendering blocks and new JSX sections.
+
+### B.1 Determine which of the 3 cases applies
+
+```javascript
+// After loading the pet document:
+const isLost = pet.status === 'lost';       // Case 3: Emergency
+const isSafe = pet.status === 'safe';       // Case 1 or Case 2
+```
+
+The distinction between Case 1 and Case 2 is **user action**, not pet state:
+- Case 1 renders by default when `isSafe === true`
+- Case 2 activates when the user presses "¿Encontraste a esta mascota?"
+
+---
+
+### B.2 Full updated `PublicProfile.jsx`
+
+```javascript
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
@@ -343,7 +446,7 @@ const PublicProfile = () => {
         {/* Footer branding */}
         <p className="text-zinc-700 text-xs text-center mt-4">
           Ficha digital generada por{' '}
-          <span className="text-teal-600 font-bold">Pakuna</span>
+          <span className="text-teal-600 font-bold">Mascota Segura</span>
         </p>
       </div>
     </div>
@@ -351,3 +454,276 @@ const PublicProfile = () => {
 };
 
 export default PublicProfile;
+```
+
+---
+
+## SECTION C — ANTI-SPAM IN `onQRScanned` CLOUD FUNCTION
+
+Replace the beginning of the `onQRScanned` function body with this version.
+The rest of the function (email sending logic) remains unchanged:
+
+```javascript
+exports.onQRScanned = onRequest(
+  { secrets: [RESEND_API_KEY], cors: true, region: 'us-central1' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+
+    const { petId, petSlug, location, type = 'normal', reporterName, reporterPhone } = req.body;
+    if (!petId || !petSlug) return res.status(400).json({ error: 'Faltan petId o petSlug' });
+
+    // ── Anti-spam: skip owner notification if same IP scanned this pet
+    //    within the last 10 minutes. Still log the scan for analytics.
+    const rawIp = req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || 'unknown';
+    const sessionKey = `${petId}_${rawIp.replace(/\./g, '_')}`;
+    const sessionRef = db.collection('scan_sessions').doc(sessionKey);
+
+    let isSpam = false;
+    try {
+      const sessionDoc = await sessionRef.get();
+      if (sessionDoc.exists) {
+        const lastScan = sessionDoc.data().lastScan?.toMillis() || 0;
+        isSpam = (Date.now() - lastScan) < 10 * 60 * 1000; // 10 minutes
+      }
+      // Always update the session timestamp
+      const expireAt = new Date(Date.now() + 10 * 60 * 1000);
+      await sessionRef.set({
+        petId,
+        ip: rawIp,
+        lastScan: FieldValue.serverTimestamp(),
+        expireAt,
+      }, { merge: true });
+    } catch (err) {
+      // If spam check fails, continue normally — don't block the user
+      console.warn('Spam check error (non-fatal):', err.message);
+    }
+
+    try {
+      // Always log the scan document regardless of spam status
+      await db.collection('scans').add({
+        petId, petSlug, type,
+        location: location || { lat: null, lng: null, address: null },
+        reporterName: reporterName || null,
+        reporterPhone: reporterPhone || null,
+        isSpam,
+        timestamp: FieldValue.serverTimestamp(),
+      });
+
+      // Only notify owner if not spam and scan type warrants notification
+      if (!isSpam && (type === 'found_safe' || type === 'emergency')) {
+        const petDoc = await db.collection('pets').doc(petId).get();
+        if (!petDoc.exists) return res.status(404).json({ error: 'Mascota no encontrada' });
+
+        const pet = petDoc.data();
+        const ownerDoc = await db.collection('users').doc(pet.ownerId).get();
+        if (!ownerDoc.exists) return res.status(200).json({ ok: true });
+
+        const owner = ownerDoc.data();
+        const resend = new Resend(RESEND_API_KEY.value());
+
+        const locationText = location?.lat
+          ? `📍 <a href="https://maps.google.com/?q=${location.lat},${location.lng}">Ver en Google Maps</a>`
+          : location?.address
+          ? `📍 Dirección reportada: ${location.address}`
+          : 'Ubicación no disponible';
+
+        if (type === 'found_safe') {
+          // Case 2 email: someone pressed "¿Encontraste a esta mascota?"
+          await resend.emails.send({
+            from: FROM_EMAIL,
+            to: owner.email,
+            subject: `👀 Alguien vio a ${pet.name} en la calle`,
+            html: `
+              <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+                <h1 style="color:#f59e0b">Aviso: ${pet.name} fue visto</h1>
+                <p>Una persona escaneó la placa QR de <strong>${pet.name}</strong> y activó el botón de hallazgo.</p>
+                <table style="border-collapse:collapse;width:100%;margin:16px 0">
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">¿Quién lo vio?</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${reporterName || 'Anónimo'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Teléfono</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${reporterPhone || 'No proporcionó'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Ubicación</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${locationText}</td>
+                  </tr>
+                </table>
+                <p style="color:#6b7280;font-size:13px">
+                  ${pet.name} no está marcado como perdido en el sistema.
+                  Si crees que está en riesgo, activa el Modo Perdido desde tu dashboard.
+                </p>
+                <p style="margin-top:20px">
+                  <a href="${APP_URL}/dashboard"
+                    style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+                    Ir a mi dashboard
+                  </a>
+                </p>
+              </div>
+            `,
+          });
+        } else if (type === 'emergency') {
+          // Case 3 email: pet is lost, someone scanned and sent location
+          await resend.emails.send({
+            from: FROM_EMAIL,
+            to: owner.email,
+            subject: `🚨 ¡Encontraron a ${pet.name}! Contacto directo establecido`,
+            html: `
+              <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+                <h1 style="color:#dc2626">¡${pet.name} fue encontrado!</h1>
+                <p>Alguien escaneó la placa QR de <strong>${pet.name}</strong> en modo emergencia y compartió su ubicación.</p>
+                <table style="border-collapse:collapse;width:100%;margin:16px 0">
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Samaritano</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${reporterName || 'Anónimo'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Teléfono</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${reporterPhone || 'No proporcionó'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Ubicación</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${locationText}</td>
+                  </tr>
+                </table>
+                <p style="color:#6b7280;font-size:13px">
+                  Cuando reencuentres a ${pet.name}, recuerda desactivar el Modo Perdido desde tu dashboard.
+                </p>
+                <p style="margin-top:20px">
+                  <a href="${APP_URL}/dashboard"
+                    style="background:#0d9488;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+                    Ir a mi dashboard
+                  </a>
+                </p>
+              </div>
+            `,
+          });
+        }
+      }
+
+      res.status(200).json({ ok: true, spam: isSpam });
+    } catch (err) {
+      console.error('onQRScanned error:', err);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+```
+
+---
+
+## SECTION D — UPDATED `scans.service.js`
+
+The frontend service now calls the Cloud Function via HTTP instead of writing
+directly to Firestore. This is required for the anti-spam logic to work
+(Firestore Security Rules allow direct writes, bypassing Cloud Function checks).
+
+Replace `src/services/scans.service.js` completely:
+
+```javascript
+const FUNCTIONS_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:5001/pakuna-3413d/us-central1'
+  : 'https://us-central1-pakuna-3413d.cloudfunctions.net';
+
+/**
+ * Records a QR scan. Routes through the Cloud Function so anti-spam
+ * validation and email notifications fire on the server side.
+ */
+export const recordScan = async ({ petId, petSlug, location, type = 'normal', reporter = null }) => {
+  try {
+    await fetch(`${FUNCTIONS_BASE_URL}/onQRScanned`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        petId,
+        petSlug,
+        type,
+        location: {
+          lat: location?.lat || null,
+          lng: location?.lng || null,
+          address: location?.address || null,
+        },
+        reporterName: reporter?.name || null,
+        reporterPhone: reporter?.phone || null,
+      }),
+    });
+  } catch (err) {
+    // Non-fatal: scan logging failure should not block the public profile UI
+    console.warn('recordScan failed (non-fatal):', err.message);
+  }
+};
+
+/**
+ * Requests browser geolocation. Resolves with coords or nulls — never rejects.
+ */
+export const getGeolocation = () =>
+  new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve({ lat: null, lng: null, address: null });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        address: null,
+      }),
+      () => resolve({ lat: null, lng: null, address: null }),
+      { timeout: 5000 }
+    );
+  });
+```
+
+---
+
+## SECTION E — FIRESTORE SECURITY RULES UPDATE
+
+Add the `scan_sessions` collection to `firestore.rules`.
+Replace the `scans` rule block and add `scan_sessions`:
+
+```javascript
+// REPLACE the existing scans rule:
+match /scans/{scanId} {
+  allow read: if isSuperAdmin();
+  // Writes now go through Cloud Function — block direct client writes
+  allow create: if false;
+  allow update, delete: if isSuperAdmin();
+}
+
+// ADD after the scans rule:
+match /scan_sessions/{sessionId} {
+  allow read, write: if false; // Cloud Function only
+}
+```
+
+---
+
+## SECTION F — AGENT CHECKLIST ADDITIONS
+
+Add these items to the verification checklist in Step 15 of the main prompt:
+
+| # | Check | Expected result |
+|---|-------|-----------------|
+| 11 | Navigate to `/p/{slug}` for a safe pet | Shows photo, name, breed, fun fact. No phone number visible. |
+| 12 | Press "¿Encontraste a esta mascota?" | Slide-in form appears. Submit → "Avisando al dueño..." → "¡El dueño fue avisado!" |
+| 13 | Navigate to `/p/{slug}` for a lost pet | Full red emergency UI. "Llamar al Dueño Ahora" and WhatsApp button visible. |
+| 14 | Scan the same QR twice within 10 min | Second scan is logged as `isSpam: true`, owner gets no email |
+| 15 | Click "Quiero un QR gratis" | Redirects to `/login` |
+| 16 | Click "Ver servicios médicos cerca" | Button is disabled with "Próximamente" badge, no action |
+| 17 | Check Firestore after Case 2 scan | `/scans` has new doc with `type: 'found_safe'` and owner received amber email |
+| 18 | Check Firestore after Case 3 scan | `/scans` has new doc with `type: 'emergency'` and owner received red email |
+
+---
+
+## SUMMARY OF ALL FILES CHANGED BY THIS DELTA
+
+| File | Action |
+|---|---|
+| `src/pages/PublicProfile.jsx` | Full rewrite — 3 cases, all new JSX |
+| `src/services/scans.service.js` | Rewrite — now calls Cloud Function via HTTP |
+| `functions/index.js` — `onQRScanned` | Extended — anti-spam + 2 new email templates |
+| `firestore.rules` | Add `scan_sessions` block, restrict direct scan writes |
+| `src/services/pets.service.js` | Add `funFact` and `medicalAlerts` to `createPet()` |
+| `src/pages/OwnerDashboard.jsx` | Add 2 new fields to pet creation form |

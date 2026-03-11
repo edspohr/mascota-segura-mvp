@@ -17,7 +17,7 @@ const OwnerDashboard = () => {
   const { campaigns } = useActiveCampaigns();
   
   const [showAddPetModal, setShowAddPetModal] = useState(false);
-  const [newPet, setNewPet] = useState({ name: '', species: 'Perro', breed: '', age: '', weight: '' });
+  const [newPet, setNewPet] = useState({ name: '', species: 'Perro', breed: '', age: '', weight: '', funFact: '', medicalAlerts: '' });
   const [photoFile, setPhotoFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -33,7 +33,7 @@ const OwnerDashboard = () => {
       }
       addToast(`¡${newPet.name} registrado con éxito!`, 'success');
       setShowAddPetModal(false);
-      setNewPet({ name: '', species: 'Perro', breed: '', age: '', weight: '' });
+      setNewPet({ name: '', species: 'Perro', breed: '', age: '', weight: '', funFact: '', medicalAlerts: '' });
       setPhotoFile(null);
     } catch (err) {
       addToast('Error al registrar mascota: ' + err.message, 'error');
@@ -120,6 +120,25 @@ const OwnerDashboard = () => {
              <div className="grid grid-cols-2 gap-4">
                  <Input label="Edad (Media)" type="number" placeholder="Ej: 2" value={newPet.age} onChange={e => setNewPet({...newPet, age: e.target.value})} required />
                  <Input label="Peso (Aprox)" placeholder="Ej: 12kg" value={newPet.weight} onChange={e => setNewPet({...newPet, weight: e.target.value})} required />
+             </div>
+             <div>
+               <Input 
+                 label="Dato curioso" 
+                 placeholder="Ej: Le encanta perseguir palomas" 
+                 value={newPet.funFact} 
+                 onChange={e => setNewPet({...newPet, funFact: e.target.value.slice(0, 120)})} 
+               />
+               <p className="text-[10px] text-slate-400 mt-1 ml-1 font-medium">Max 120 caracteres. Visible en el perfil público.</p>
+             </div>
+             <div>
+                <label className="text-sm font-bold text-slate-600 ml-1 mb-2 block">Alertas médicas</label>
+                <textarea 
+                  placeholder="Ej: Alérgico a ibuprofeno. Solo para uso veterinario/emergencias." 
+                  value={newPet.medicalAlerts} 
+                  onChange={e => setNewPet({...newPet, medicalAlerts: e.target.value.slice(0, 300)})} 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 active:border-teal-500 transition-all min-h-[100px]"
+                />
+                <p className="text-[10px] text-slate-400 mt-1 ml-1 font-medium italic">⚠️ Solo visible cuando la mascota está en Modo Perdido.</p>
              </div>
              <div>
                <label className="text-sm font-bold text-slate-600 ml-1 mb-2 block">Foto del Perfil</label>

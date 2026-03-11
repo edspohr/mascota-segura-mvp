@@ -1,6 +1,6 @@
 /* eslint-env node */
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { getFirestore } = require("firebase-admin/firestore");
+const { onRequest } = require("firebase-functions/v2/https");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { Resend } = require("resend");
 const { defineSecret } = require("firebase-functions/params");
@@ -8,101 +8,154 @@ const { defineSecret } = require("firebase-functions/params");
 initializeApp();
 const db = getFirestore();
 
-// Secret definition for Resend API Key
-// Note: This requires the Blaze plan to set via 'firebase functions:secrets:set RESEND_API_KEY'
-const resendApiKey = defineSecret("RESEND_API_KEY");
+const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
+const FROM_EMAIL = "Pakuna <alertas@pakuna.app>";
+const APP_URL = "https://pakuna-3413d.web.app";
 
 /**
- * onScan Trigger
- * Sends an email to the pet owner when their pet's QR is scanned (emergency mode).
+ * onQRScanned HTTP Function
+ * Handles scan logging, anti-spam, and immediate owner notifications.
  */
-exports.onScanCreated = onDocumentCreated({
-  document: "scans/{scanId}",
-  secrets: [resendApiKey],
-}, async (event) => {
-  const snapshot = event.data;
-  if (!snapshot) return;
+exports.onQRScanned = onRequest(
+  { secrets: [RESEND_API_KEY], cors: true, region: "us-central1" },
+  async (req, res) => {
+    if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
 
-  const scanData = snapshot.data();
+    const { petId, petSlug, location, type = "normal", reporterName, reporterPhone } = req.body;
+    if (!petId || !petSlug) return res.status(400).json({ error: "Faltan petId o petSlug" });
 
-  // Only send emails for emergency scans
-  if (scanData.type !== "emergency") {
-    console.log("Normal scan recorded, skipping email.");
-    return;
-  }
+    // ── Anti-spam: skip owner notification if same IP scanned this pet
+    //    within the last 10 minutes. Still log the scan for analytics.
+    const rawIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket?.remoteAddress || "unknown";
+    const sessionKey = `${petId}_${rawIp.replace(/\./g, "_")}`;
+    const sessionRef = db.collection("scan_sessions").doc(sessionKey);
 
-  try {
-    // 1. Get pet data to find the owner
-    const petDoc = await db.collection("pets").doc(scanData.petId).get();
-    if (!petDoc.exists) {
-      console.error("Pet not found:", scanData.petId);
-      return;
-    }
-    const petData = petDoc.data();
-
-    // 2. Get owner data to get their email
-    const ownerDoc = await db.collection("users").doc(petData.ownerId).get();
-    if (!ownerDoc.exists) {
-      console.error("Owner not found:", petData.ownerId);
-      return;
-    }
-    const ownerData = ownerDoc.data();
-
-    if (!ownerData.email) {
-      console.error("Owner has no email:", ownerData.name);
-      return;
+    let isSpam = false;
+    try {
+      const sessionDoc = await sessionRef.get();
+      if (sessionDoc.exists) {
+        const lastScan = sessionDoc.data().lastScan?.toMillis() || 0;
+        isSpam = (Date.now() - lastScan) < 10 * 60 * 1000; // 10 minutes
+      }
+      // Always update the session timestamp
+      const expireAt = new Date(Date.now() + 10 * 60 * 1000);
+      await sessionRef.set({
+        petId,
+        ip: rawIp,
+        lastScan: FieldValue.serverTimestamp(),
+        expireAt,
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Spam check error (non-fatal):", err.message);
     }
 
-    // 3. Initialize Resend
-    const resend = new Resend(resendApiKey.value());
+    try {
+      // Always log the scan document
+      await db.collection("scans").add({
+        petId, petSlug, type,
+        location: location || { lat: null, lng: null, address: null },
+        reporterName: reporterName || null,
+        reporterPhone: reporterPhone || null,
+        isSpam,
+        timestamp: FieldValue.serverTimestamp(),
+      });
 
-    // 4. Send Email
-    const { data, error } = await resend.emails.send({
-      from: "Mascota Segura <alertas@mascotasegura.app>", // Should use a verified domain in production
-      to: [ownerData.email],
-      subject: `🚨 ¡ALERTA! Tu mascota ${petData.name} ha sido escaneada`,
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; 
-                    border-radius: 10px; overflow: hidden;">
-          <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0;">¡Alerta de Emergencia!</h1>
-          </div>
-          <div style="padding: 20px; color: #333;">
-            <p>Hola <strong>${ownerData.name}</strong>,</p>
-            <p>Te informamos que la placa inteligente de <strong>${petData.name}</strong> ha sido escaneada 
-               en modo de emergencia.</p>
-            
-            <div style="background-color: #f9fafb; border-left: 4px solid #f97316; padding: 15px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #f97316;">Datos del Reportante:</h3>
-              <p style="margin: 5px 0;"><strong>Nombre:</strong> ${scanData.reporter?.name || "Anónimo"}</p>
-              <p style="margin: 5px 0;"><strong>Teléfono:</strong> ${scanData.reporter?.phone || "No proporcionado"}</p>
-            </div>
+      // Only notify owner if not spam and scan type warrants notification
+      if (!isSpam && (type === "found_safe" || type === "emergency")) {
+        const petDoc = await db.collection("pets").doc(petId).get();
+        if (!petDoc.exists) return res.status(404).json({ error: "Mascota no encontrada" });
 
-            ${scanData.location ? `
-              <div style="margin: 20px 0;">
-                <p><strong>Ubicación aproximada del escaneo:</strong></p>
-                <a href="https://www.google.com/maps?q=${scanData.location.latitude},${scanData.location.longitude}" 
-                   style="display: inline-block; background-color: #0d9488; color: white; padding: 10px 20px; 
-                          text-decoration: none; border-radius: 5px; font-weight: bold;">
-                  Ver en Google Maps
-                </a>
+        const pet = petDoc.data();
+        const ownerDoc = await db.collection("users").doc(pet.ownerId).get();
+        if (!ownerDoc.exists) return res.status(200).json({ ok: true });
+
+        const owner = ownerDoc.data();
+        const resend = new Resend(RESEND_API_KEY.value());
+
+        const locationText = location?.lat
+          ? `📍 <a href="https://maps.google.com/?q=${location.lat},${location.lng}">Ver en Google Maps</a>`
+          : location?.address
+          ? `📍 Dirección reportada: ${location.address}`
+          : "Ubicación no disponible";
+
+        if (type === "found_safe") {
+          await resend.emails.send({
+            from: FROM_EMAIL,
+            to: owner.email,
+            subject: `👀 Alguien vio a ${pet.name} en la calle`,
+            html: `
+              <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+                <h1 style="color:#f59e0b">Aviso: ${pet.name} fue visto</h1>
+                <p>Una persona escaneó la placa QR de <strong>${pet.name}</strong> y activó el botón de hallazgo.</p>
+                <table style="border-collapse:collapse;width:100%;margin:16px 0">
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">¿Quién lo vio?</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${reporterName || "Anónimo"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Teléfono</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${reporterPhone || "No proporcionó"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Ubicación</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${locationText}</td>
+                  </tr>
+                </table>
+                <p style="color:#6b7280;font-size:13px">
+                  ${pet.name} no está marcado como perdido en el sistema.
+                  Si crees que está en riesgo, activa el Modo Perdido desde tu dashboard.
+                </p>
+                <p style="margin-top:20px">
+                  <a href="${APP_URL}/dashboard"
+                    style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+                    Ir a mi dashboard
+                  </a>
+                </p>
               </div>
-            ` : "<p><em>No se pudo capturar la ubicación GPS exacta.</em></p>"}
+            `,
+          });
+        } else if (type === "emergency") {
+          await resend.emails.send({
+            from: FROM_EMAIL,
+            to: owner.email,
+            subject: `🚨 ¡Encontraron a ${pet.name}! Contacto directo establecido`,
+            html: `
+              <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+                <h1 style="color:#dc2626">¡${pet.name} fue encontrado!</h1>
+                <p>Alguien escaneó la placa QR de <strong>${pet.name}</strong> en modo emergencia y compartió su ubicación.</p>
+                <table style="border-collapse:collapse;width:100%;margin:16px 0">
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Samaritano</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${reporterName || "Anónimo"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Teléfono</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${reporterPhone || "No proporcionó"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">Ubicación</td>
+                    <td style="padding:8px 12px;border:1px solid #e5e7eb">${locationText}</td>
+                  </tr>
+                </table>
+                <p style="color:#6b7280;font-size:13px">
+                  Cuando reencuentres a ${pet.name}, recuerda desactivar el Modo Perdido desde tu dashboard.
+                </p>
+                <p style="margin-top:20px">
+                  <a href="${APP_URL}/dashboard"
+                    style="background:#00457C;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+                    Ir a mi dashboard
+                  </a>
+                </p>
+              </div>
+            `,
+          });
+        }
+      }
 
-            <p style="font-size: 14px; color: #666; margin-top: 40px; border-top: 1px solid #eee; pt-20;">
-              Este es un mensaje automático del sistema Mascota Segura. Por favor, no respondas a este correo.
-            </p>
-          </div>
-        </div>
-      `,
-    });
-
-    if (error) {
-      console.error("Resend Error:", error);
-    } else {
-      console.log("Email sent successfully:", data.id);
+      res.status(200).json({ ok: true, spam: isSpam });
+    } catch (err) {
+      console.error("onQRScanned error:", err);
+      res.status(500).json({ error: "Error interno del servidor" });
     }
-  } catch (err) {
-    console.error("Error Processing Scan Function:", err);
   }
-});
+);

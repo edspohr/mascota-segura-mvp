@@ -15,6 +15,8 @@ export const createPet = async (ownerId, petData, qrSlug = null) => {
     age: Number(petData.age),
     weight: petData.weight,
     photoURL: petData.photoURL || '',
+    funFact: petData.funFact || '',
+    medicalAlerts: petData.medicalAlerts || '',
     ownerId,
     status: 'safe',
     compliance: 100,

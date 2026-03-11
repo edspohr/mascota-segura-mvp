@@ -62,8 +62,13 @@ service cloud.firestore {
     match /scans/{scanId} {
       // Scans are private to the owner and the platform
       allow read: if isSignedIn() && isOwner(get(/databases/$(database)/documents/pets/$(resource.data.petId)).data.ownerId);
-      allow create: if true; // Anyone scanning the QR can create a scan record
-      allow update, delete: if false; // Scans are immutable logs
+      // Writes now go through Cloud Function — block direct client writes
+      allow create: if false;
+      allow update, delete: if false; 
+    }
+
+    match /scan_sessions/{sessionId} {
+      allow read, write: if false; // Cloud Function only
     }
 
     // --- CAMPAIGNS ---
