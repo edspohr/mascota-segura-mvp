@@ -12,7 +12,7 @@ import { MOCK_QR_CODES, MOCK_PETS } from '../data/mockData';
 const QROnboarding = () => {
   const { qrSlug } = useParams();
   const navigate = useNavigate();
-  const { user, firebaseUser, addToast, isDemo } = useApp();
+  const { firebaseUser, addToast, isDemo } = useApp();
 
   const [qrStatus, setQrStatus] = useState('loading'); // loading | orphan | claimed | invalid
   const [linkedPetSlug, setLinkedPetSlug] = useState(null);
