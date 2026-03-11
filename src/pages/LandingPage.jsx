@@ -13,8 +13,8 @@ const LandingPage = () => {
       <div className="absolute bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] bg-teal-50/50 rounded-full blur-[100px] pointer-events-none" />
 
       <nav className="border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <Logo className="h-16" />
+        <div className="container mx-auto px-6 h-32 flex items-center justify-between">
+          <Logo className="h-24" />
           
           <div className="hidden lg:flex items-center space-x-10 text-sm font-black uppercase tracking-widest text-[#00457C]/60">
              <a href="#how-it-works" className="hover:text-teal-600 transition-colors">La Ficha Digital</a>
@@ -141,10 +141,10 @@ const LandingPage = () => {
       </main>
       
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-50 py-20 text-center">
+      <footer className="bg-white border-t border-slate-50 py-24 text-center">
          <div className="container mx-auto px-6">
-             <div className="flex justify-center mb-10">
-                 <Logo className="h-20 opacity-90" />
+             <div className="flex justify-center mb-12">
+                 <Logo className="h-32 opacity-100" />
              </div>
              <p className="text-slate-400 font-bold text-sm tracking-widest uppercase">© 2026 Pakuna Ecosystem. All Rights Reserved.</p>
              <div className="mt-8 flex justify-center gap-10 text-xs font-black text-slate-300 uppercase tracking-widest">
