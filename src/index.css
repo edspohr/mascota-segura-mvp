@@ -2,7 +2,7 @@
 
 @layer base {
   body {
-    @apply bg-zinc-950 text-slate-50 font-sans;
+    @apply bg-slate-50 text-slate-900 font-sans;
   }
 }
 
@@ -12,61 +12,44 @@
   --animate-pulse-slow: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-glow: glow 3s ease-in-out infinite alternate;
 
+  --color-brand-primary: #00457C; /* Navy Blue from Logo */
+  --color-brand-secondary: #008894; /* Teal from Logo */
+  --color-brand-accent: #E0F2F1; /* Soft Teal background */
+
   @keyframes float {
-    0% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
-    100% {
-      transform: translateY(0px);
-    }
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
   }
 
   @keyframes float-delayed {
-    0% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(20px);
-    }
-    100% {
-      transform: translateY(0px);
-    }
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(20px); }
+    100% { transform: translateY(0px); }
   }
 
   @keyframes pulse-slow {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
 
   @keyframes glow {
-    from {
-      box-shadow: 0 0 10px -5px rgba(20, 184, 166, 0.4);
-    }
-    to {
-      box-shadow: 0 0 25px 5px rgba(20, 184, 166, 0.6);
-    }
+    from { box-shadow: 0 0 10px -5px rgba(0, 136, 148, 0.2); }
+    to { box-shadow: 0 0 25px 5px rgba(0, 136, 148, 0.4); }
   }
 }
 
-/* Custom scrolling hide */
+/* Custom scrolling */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: #f8fafc;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #cbd5e1;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #94a3b8;
 }

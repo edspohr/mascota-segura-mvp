@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function getProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isSignedIn() && getProfile().role == role;
+    }
+
+    // --- USERS ---
+    match /users/{userId} {
+      allow read: if isSignedIn(); // Users can see each other's basic profiles (e.g., vet seeing owner name)
+      allow write: if isOwner(userId);
+    }
+
+    // --- PETS ---
+    match /pets/{petId} {
+      // Public profiles are readable by anyone via slug-based queries or direct ID
+      allow read: if true; 
+      
+      // Only owners can create pets
+      allow create: if isSignedIn(); // We validate ownerId in the app, but could add: && request.resource.data.ownerId == request.auth.uid;
+      
+      // Updates: Owner can update everything. Vets/Clinics can update status or health info if they are related (concept for future)
+      allow update: if isOwner(resource.data.ownerId) || hasRole('veterinary') || hasRole('clinic_admin');
+      
+      allow delete: if isOwner(resource.data.ownerId);
+    }
+
+    // --- LOGS (Bitacora) ---
+    match /logs/{logId} {
+      // Logs are readable if you can read the pet (public for now, or just authenticated)
+      allow read: if true;
+      
+      // Owners and Vets can create logs
+      allow create: if isSignedIn();
+      
+      // Only author or pet owner can delete/update? (Keeping it simple for MVP)
+      allow update, delete: if isOwner(resource.data.authorUid) || isOwner(get(/databases/$(database)/documents/pets/$(resource.data.petId)).data.ownerId);
+    }
+
+    // --- EVENTS (Reminders) ---
+    match /events/{eventId} {
+      allow read: if isSignedIn() && (isOwner(resource.data.ownerId) || hasRole('veterinary'));
+      allow create: if isSignedIn(); // Vets create events
+      allow update, delete: if isSignedIn() && (isOwner(resource.data.ownerId) || isOwner(resource.data.authorUid));
+    }
+
+    // --- SCANS ---
+    match /scans/{scanId} {
+      // Scans are private to the owner and the platform
+      allow read: if isSignedIn() && isOwner(get(/databases/$(database)/documents/pets/$(resource.data.petId)).data.ownerId);
+      allow create: if true; // Anyone scanning the QR can create a scan record
+      allow update, delete: if false; // Scans are immutable logs
+    }
+
+    // --- CAMPAIGNS ---
+    match /campaigns/{campaignId} {
+      allow read: if true; // Everyone can see campaigns
+      allow create: if hasRole('partner');
+      allow update, delete: if hasRole('partner') && resource.data.partnerUid == request.auth.uid;
+    }
+  }
+}

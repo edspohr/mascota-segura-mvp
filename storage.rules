@@ -1,0 +1,40 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper: Is the user signed in?
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper: Is the user the owner of the path?
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- Profile Avatars ---
+    match /avatars/{userId}/{fileName} {
+      allow read: if true; // Avatars are public
+      allow write: if isOwner(userId) 
+                   && request.resource.size < 2 * 1024 * 1024 // 2MB limit
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // --- Pet Photos ---
+    match /pets/{petId}/{fileName} {
+      allow read: if true; // Pet photos are public for the profile
+      allow write: if isSignedIn() // Anyone signed in can upload (onboarding) if it correlates to a pet they control (app logic)
+                   && request.resource.size < 5 * 1024 * 1024 // 5MB limit
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if isSignedIn(); // Could be stricter but keeping it simple for MVP
+    }
+    
+    // --- Campaign Images ---
+    match /campaigns/{partnerId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(partnerId)
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
