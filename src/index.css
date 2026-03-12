@@ -2,7 +2,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 font-sans;
+    @apply bg-slate-50 text-[#00457C] font-sans selection:bg-teal-500/10;
   }
 }
 
@@ -12,9 +12,10 @@
   --animate-pulse-slow: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-glow: glow 3s ease-in-out infinite alternate;
 
-  --color-brand-primary: #00457C; /* Navy Blue from Logo */
-  --color-brand-secondary: #008894; /* Teal from Logo */
-  --color-brand-accent: #E0F2F1; /* Soft Teal background */
+  --color-brand-primary: #00457C;   /* Navy Blue - Success/Trust */
+  --color-brand-secondary: #008894; /* Pakuna Teal - Health/Calm */
+  --color-brand-accent: #F0FDFA;    /* Very soft Teal background */
+  --color-brand-muted: #94A3B8;     /* Slate for secondary text */
 
   @keyframes float {
     0% { transform: translateY(0px); }

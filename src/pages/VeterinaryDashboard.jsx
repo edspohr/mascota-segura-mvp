@@ -6,7 +6,7 @@ import { addLog } from '../services/logs.service';
 import { addEvent } from '../services/events.service';
 import { Card, Button, Modal, Input } from '../components/ui/Components';
 import Logo from '../components/ui/Logo';
-import { Users, BellRing, TrendingUp, CheckCircle2, AlertCircle, PlusCircle, Search, Calendar } from 'lucide-react';
+import { Users, BellRing, TrendingUp, CheckCircle2, AlertCircle, Search, Calendar } from 'lucide-react';
 import { MOCK_PATIENTS } from '../data/mockData';
 
 const VeterinaryDashboard = () => {
@@ -97,7 +97,7 @@ const VeterinaryDashboard = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-12 h-12 border-4 border-[#008894] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
@@ -107,30 +107,30 @@ const VeterinaryDashboard = () => {
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+    <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 pt-8">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <Logo className="w-12 h-12" />
-          <div>
-            <h1 className="text-3xl font-black text-blue-900 tracking-tight">Portal de Especialistas</h1>
-            <p className="text-slate-500 font-medium">{profile?.name || 'Clínica Asociada'} • Verificado por Pakuna</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="flex items-center gap-6">
+          <Logo className="w-14 h-14" />
+          <div className="space-y-1">
+            <h1 className="text-3xl lg:text-4xl font-black text-[#00457C] tracking-tight leading-none">Portal Especialista</h1>
+            <p className="text-slate-500 font-medium text-lg">{profile?.name || 'Clínica Asociada'} • Verificación Médica</p>
           </div>
         </div>
-        <div className="px-4 py-2 bg-teal-50 border border-teal-100 rounded-full flex items-center gap-2">
-            <span className="w-2 h-2 bg-teal-500 rounded-full animate-pulse" />
-            <span className="text-[10px] font-black uppercase text-teal-700 tracking-widest">Sincronizado</span>
+        <div className="px-6 py-3 bg-teal-50 border border-teal-100 rounded-full flex items-center gap-3 shadow-sm">
+            <span className="w-2.5 h-2.5 bg-[#008894] rounded-full animate-pulse shadow-[0_0_8px_rgba(0,136,148,0.5)]" />
+            <span className="text-[10px] font-black uppercase text-[#008894] tracking-[0.2em]">Conexión Certificada</span>
         </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <MetricCard 
-          title="Tasa de Compliance" 
+          title="Salud Preventiva" 
           value="98.2%" 
           trend="+4.1%"
-          icon={<TrendingUp className="w-6 h-6 text-teal-600" />}
+          icon={<TrendingUp className="w-6 h-6 text-[#008894]" />}
         />
         <MetricCard 
           title="Alertas Activas" 
@@ -139,30 +139,33 @@ const VeterinaryDashboard = () => {
           icon={<BellRing className="w-6 h-6 text-amber-500" />}
         />
         <MetricCard 
-          title="Pacientes en Red" 
+          title="Pacientes Registrados" 
           value={patients.length} 
-          trend="Total registrados"
-          icon={<Users className="w-6 h-6 text-blue-700" />}
+          trend="Historiales Activos"
+          icon={<Users className="w-6 h-6 text-[#00457C]" />}
         />
       </div>
 
       {/* Patients Table */}
-      <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-50 overflow-hidden">
-        <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-center gap-6 bg-slate-50/30">
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-900 rounded-xl">
-                    <Users className="w-5 h-5 text-white" />
+      <div className="bg-white rounded-[3rem] shadow-2xl shadow-slate-950/[0.03] border border-slate-100 overflow-hidden">
+        <div className="p-10 border-b border-slate-50 flex flex-col lg:flex-row justify-between lg:items-center gap-8 bg-slate-50/10">
+            <div className="flex items-center gap-5">
+                <div className="p-4 bg-[#00457C] rounded-2xl shadow-lg shadow-blue-900/10">
+                    <Users className="w-7 h-7 text-white" />
                 </div>
-                <h2 className="text-2xl font-black text-blue-900">Base de Pacientes</h2>
+                <div>
+                   <h2 className="text-2xl font-black text-[#00457C] tracking-tight leading-none">Gestión de Pacientes</h2>
+                   <p className="text-slate-400 font-bold text-[10px] mt-1.5 uppercase tracking-widest leading-none">Directorio Clínico Digital</p>
+                </div>
             </div>
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="relative w-full lg:w-96 group">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-[#008894] transition-colors" />
               <input 
                 type="text" 
-                placeholder="Buscar por nombre o dueño..." 
+                placeholder="Nombre de mascota o propietario..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-2xl pl-12 pr-4 py-3 text-sm text-slate-800 shadow-sm focus:ring-4 focus:ring-blue-900/5 focus:border-blue-900/20 transition-all outline-none"
+                className="w-full bg-white border border-slate-200 rounded-2xl pl-16 pr-6 py-4 text-sm text-[#00457C] shadow-sm focus:ring-8 focus:ring-blue-900/5 focus:border-[#00457C]/20 transition-all outline-none placeholder:text-slate-300 font-medium"
               />
             </div>
         </div>
@@ -170,86 +173,111 @@ const VeterinaryDashboard = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Paciente</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ficha Clínica</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado Pakuna</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Gestión</th>
+              <tr className="bg-slate-50/30">
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Paciente</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Última Atención</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estatus Ficha</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filteredPatients.map(patient => (
+              {filteredPatients.length > 0 ? filteredPatients.map(patient => (
                 <tr key={patient.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
+                  <td className="px-10 py-8">
+                      <div className="flex items-center gap-6">
                         <div className="relative">
-                            <img src={patient.photoURL || patient.petPhotoURL || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=80&q=80"} className="w-12 h-12 rounded-2xl object-cover shadow-sm" />
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-teal-500 border-2 border-white rounded-full" />
+                            <img src={patient.photoURL || patient.petPhotoURL || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=80&q=80"} className="w-14 h-14 rounded-2xl object-cover shadow-2xl shadow-blue-900/10 border-2 border-white" />
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#008894] border-2 border-white rounded-full shadow-sm" />
                         </div>
-                        <div className="flex flex-col">
-                            <span className="font-black text-blue-900 leading-none mb-1">{patient.name || patient.petName}</span>
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{patient.species || patient.petSpecies} • {patient.breed || patient.petBreed}</span>
+                        <div className="flex flex-col space-y-1">
+                            <span className="font-black text-[#00457C] text-lg tracking-tight leading-none">{patient.name || patient.petName}</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">{patient.species || patient.petSpecies} • {patient.breed || patient.petBreed}</span>
                         </div>
                       </div>
                   </td>
-                  <td className="px-8 py-6">
-                      <div className="flex items-center gap-2 text-slate-600 font-medium">
-                          <Calendar className="w-4 h-4 text-slate-300" />
-                          <span>Ult. Visita: {patient.lastVisit || 'Mar 2026'}</span>
+                  <td className="px-10 py-8 text-slate-600 font-medium">
+                      <div className="flex items-center gap-3">
+                          <Calendar className="w-5 h-5 text-slate-200" />
+                          <span className="text-sm font-semibold text-slate-500">
+                             {patient.lastVisit || 'Revisión Reciente'}
+                          </span>
                       </div>
                   </td>
-                  <td className="px-8 py-6">
-                    {(patient.status === 'safe' || patient.compliance >= 80) && <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest bg-teal-50 text-teal-700 border border-teal-100"><CheckCircle2 className="w-3.5 h-3.5" /> CERTIFICADO</span>}
-                    {(patient.status === 'lost' || (patient.compliance < 80 && patient.compliance > 0)) && <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest bg-amber-50 text-amber-700 border border-amber-100 animate-pulse"><AlertCircle className="w-3.5 h-3.5" /> ALERTADO</span>}
-                    {!patient.status && !patient.compliance && <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest bg-slate-50 text-slate-500 border border-slate-100">SIN DATOS</span>}
+                  <td className="px-10 py-8">
+                    {(patient.status === 'safe' || patient.compliance >= 80) && (
+                      <span className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full text-[9px] font-black tracking-widest bg-teal-50 text-[#008894] border border-teal-100 shadow-sm">
+                        <CheckCircle2 className="w-4 h-4 fill-current" /> COMPLETADO
+                      </span>
+                    )}
+                    {(patient.status === 'lost' || (patient.compliance < 80 && patient.compliance > 0)) && (
+                      <span className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full text-[9px] font-black tracking-widest bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
+                        <AlertCircle className="w-4 h-4" /> PENDIENTE
+                      </span>
+                    )}
+                    {!patient.status && !patient.compliance && (
+                      <span className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full text-[9px] font-black tracking-widest bg-slate-50 text-slate-400 border border-slate-100 uppercase">Sin Historial</span>
+                    )}
                   </td>
-                  <td className="px-8 py-6 text-right">
-                    <Button onClick={() => handleOpenVisitModal(patient)} className="bg-blue-900 border-none hover:bg-slate-800 text-xs py-2.5 px-6 rounded-xl font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 active:scale-95 transition-all">
+                  <td className="px-10 py-8 text-right">
+                    <Button onClick={() => handleOpenVisitModal(patient)} className="bg-[#00457C] hover:bg-slate-800 text-[10px] py-4 px-8 rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-blue-900/10 active:scale-95 transition-all">
                       Nueva Atención
                     </Button>
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan="4" className="px-10 py-24 text-center">
+                    <p className="text-slate-300 font-black italic uppercase tracking-widest text-sm opacity-50">No hay pacientes que coincidan con la búsqueda.</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* Register Visit Modal */}
-      <Modal isOpen={showVisitModal} onClose={() => setShowVisitModal(false)} title={`Atención Preventiva: ${selectedPatient?.name || selectedPatient?.petName}`}>
-        <form onSubmit={handleRegisterVisit} className="space-y-8">
-             <div className="bg-blue-900 text-white p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10" />
-                <h4 className="text-lg font-black mb-2 relative z-10">Validación Pakuna Health</h4>
-                <p className="text-blue-100 text-sm font-medium relative z-10 leading-relaxed">
-                    Al certificar esta atención, la credencial inteligente de {selectedPatient?.name || selectedPatient?.petName} se actualizará globalmente y se programará el recordatorio automático para el dueño.
+      <Modal isOpen={showVisitModal} onClose={() => setShowVisitModal(false)} title={`Certificación de Atención`}>
+        <form onSubmit={handleRegisterVisit} className="space-y-10">
+             <div className="bg-[#00457C] text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
+                <div className="relative z-10 flex items-center gap-6 mb-4">
+                   <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center backdrop-blur-sm">
+                      <ShieldCheck className="w-10 h-10 text-white" />
+                   </div>
+                   <h4 className="text-2xl font-black tracking-tight leading-tight">Certificación Pakuna</h4>
+                </div>
+                <p className="text-blue-100 text-base font-medium relative z-10 leading-relaxed max-w-sm">
+                    Estás por registrar una atención para <span className="font-black text-white">{selectedPatient?.name || selectedPatient?.petName}</span>. 
+                    El dueño recibirá una notificación automática.
                 </p>
              </div>
 
-             <div className="space-y-6">
-                 <div className="flex flex-col gap-2">
-                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Servicio</label>
+             <div className="space-y-8">
+                 <div className="flex flex-col gap-3">
+                   <label className="text-[10px] font-black text-[#00457C] uppercase tracking-[0.2em] ml-2 opacity-60">Tipo de Prestación Médica</label>
                    <select 
-                     className="px-5 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 text-blue-900 font-black focus:outline-none focus:border-blue-900/20 focus:ring-4 focus:ring-blue-900/5 transition-all"
+                     className="px-6 py-5 rounded-2xl border-2 border-slate-100 bg-slate-50 text-[#00457C] font-black focus:outline-none focus:border-[#008894] focus:ring-8 focus:ring-teal-500/5 transition-all text-base appearance-none cursor-pointer"
                      value={visitData.type}
                      onChange={(e) => setVisitData({...visitData, type: e.target.value})}
                    >
-                     <option value="Vacuna">Vacunación Anual</option>
-                     <option value="Control">Chequeo Preventivo</option>
-                     <option value="Desparasitación">Tratamiento Parasitario</option>
-                     <option value="Cirugía">Procedimiento Quirúrgico</option>
+                     <option value="Vacuna">Vacunación (Anual/Refuerzo)</option>
+                     <option value="Control">Prevención y Chequeo</option>
+                     <option value="Desparasitación">Profilaxis Parasitaria</option>
+                     <option value="Cirugía">Intervención Quirúrgica</option>
+                     <option value="Otro">Consulta Especializada</option>
                    </select>
                  </div>
 
                  <Input 
-                    label="Observaciones Médicas" 
-                    placeholder="Contenido certificado para la bitácora..." 
+                    label="Observaciones y Diagnóstico" 
+                    placeholder="Describe brevemente la atención realizada..." 
                     value={visitData.description} 
                     onChange={e => setVisitData({...visitData, description: e.target.value})} 
                  />
 
                  <Input 
-                    label="Próxima Cita Recomendada" 
+                    label="Fecha de Próximo Recordatorio" 
                     type="date"
                     value={visitData.nextDueDate} 
                     onChange={e => setVisitData({...visitData, nextDueDate: e.target.value})} 
@@ -257,8 +285,8 @@ const VeterinaryDashboard = () => {
                  />
              </div>
 
-             <Button type="submit" disabled={submittingVisit} className="w-full py-5 text-xl font-black bg-teal-600 hover:bg-teal-700 text-white border-none shadow-2xl shadow-teal-100 mt-4 h-auto">
-                 {submittingVisit ? 'Certificando...' : 'Certificar Atención Médico'}
+             <Button type="submit" disabled={submittingVisit} className="w-full py-7 text-xl font-black bg-[#008894] hover:bg-teal-700 text-white border-none shadow-2xl shadow-teal-900/30 rounded-[2rem] active:scale-95 transition-all flex justify-center">
+                 {submittingVisit ? 'Certificando en Red...' : 'Finalizar y Notificar'}
              </Button>
         </form>
       </Modal>
@@ -268,23 +296,21 @@ const VeterinaryDashboard = () => {
 };
 
 const MetricCard = ({ title, value, trend, icon }) => (
-  <Card className="bg-white border-slate-50 p-8 flex flex-col hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 shadow-xl shadow-slate-100/50 rounded-[2.5rem] relative overflow-hidden group cursor-default">
-    <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full blur-3xl group-hover:bg-blue-900/5 transition-colors" />
-    <div className="flex justify-between items-start mb-8 relative z-10">
-      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner group-hover:scale-110 group-hover:bg-white transition-all duration-500">
+  <Card className="bg-white border-slate-100 p-10 flex flex-col hover:shadow-2xl hover:shadow-slate-950/[0.04] transition-all duration-700 shadow-xl shadow-slate-950/[0.02] rounded-[3rem] relative overflow-hidden group cursor-default">
+    <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-full blur-3xl group-hover:bg-[#008894]/5 transition-colors duration-700" />
+    <div className="flex justify-between items-start mb-10 relative z-10">
+      <div className="p-5 bg-slate-50 rounded-[1.5rem] border border-slate-100 shadow-inner group-hover:scale-110 group-hover:bg-white transition-all duration-700">
         {icon}
       </div>
-      <div className="px-3 py-1.5 bg-teal-50 border border-teal-100 rounded-full">
-         <span className="text-[10px] font-black tracking-widest uppercase text-teal-700">{trend}</span>
+      <div className="px-4 py-2 bg-teal-50 border border-teal-50 rounded-full shadow-sm">
+         <span className="text-[9px] font-black tracking-[0.2em] uppercase text-[#008894]">{trend}</span>
       </div>
     </div>
     <div className="mt-auto relative z-10">
-      <p className="text-xs font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">{title}</p>
-      <h3 className="text-5xl font-black text-blue-900 tracking-tight">{value}</h3>
+      <p className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-[0.3em] leading-none">{title}</p>
+      <h3 className="text-5xl lg:text-6xl font-black text-[#00457C] tracking-tight leading-none">{value}</h3>
     </div>
   </Card>
 );
 
 export default VeterinaryDashboard;
-
-
