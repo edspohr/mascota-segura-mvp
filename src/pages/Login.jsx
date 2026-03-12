@@ -4,6 +4,7 @@ import { loginWithEmail, loginWithGoogle, registerWithEmail } from '../services/
 import { useApp } from '../context';
 import Logo from '../components/ui/Logo';
 import { Button, Input } from '../components/ui/Components';
+import { ChevronRight } from 'lucide-react';
 import { DEMO_MODE } from '../config/demo';
 import { DEV_LOGIN_ROLES } from '../data/mockData';
 
